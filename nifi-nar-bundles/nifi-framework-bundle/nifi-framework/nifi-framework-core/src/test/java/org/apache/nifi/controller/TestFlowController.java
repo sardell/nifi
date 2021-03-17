@@ -80,6 +80,7 @@ import org.apache.nifi.scheduling.ExecutionNode;
 import org.apache.nifi.scheduling.SchedulingStrategy;
 import org.apache.nifi.services.FlowService;
 import org.apache.nifi.util.NiFiProperties;
+import org.apache.nifi.validation.FlowAnalysisContext;
 import org.apache.nifi.web.api.dto.BundleDTO;
 import org.apache.nifi.web.api.dto.ControllerServiceDTO;
 import org.apache.nifi.web.api.dto.FlowSnippetDTO;
@@ -211,6 +212,7 @@ public class TestFlowController {
         bulletinRepo = mock(BulletinRepository.class);
         controller = FlowController.createStandaloneInstance(flowFileEventRepo, nifiProperties, authorizer,
                 auditService, encryptor, bulletinRepo, variableRegistry, extensionManager, statusHistoryRepository);
+        controller.setFlowAnalysisContext(mock(FlowAnalysisContext.class));
 
         final XmlFlowSynchronizer xmlFlowSynchronizer = new XmlFlowSynchronizer(nifiProperties, extensionManager);
         final VersionedFlowSynchronizer versionedFlowSynchronizer = new VersionedFlowSynchronizer(extensionManager,

@@ -19,6 +19,7 @@ package org.apache.nifi.controller.service;
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.controller.ComponentNode;
 import org.apache.nifi.controller.ControllerService;
+import org.apache.nifi.controller.FlowAnalysisRuleNode;
 import org.apache.nifi.controller.ParameterProviderNode;
 import org.apache.nifi.controller.ProcessScheduler;
 import org.apache.nifi.controller.ProcessorNode;
@@ -112,6 +113,7 @@ public class StandardControllerServiceProvider implements ControllerServiceProvi
         // or a service that references this controller service, etc.
         final List<ProcessorNode> processors = serviceNode.getReferences().findRecursiveReferences(ProcessorNode.class);
         final List<ReportingTaskNode> reportingTasks = serviceNode.getReferences().findRecursiveReferences(ReportingTaskNode.class);
+        final List<FlowAnalysisRuleNode> flowAnalysisRuleNodes = serviceNode.getReferences().findRecursiveReferences(FlowAnalysisRuleNode.class);
 
         // verify that  we can start all components (that are not disabled) before doing anything
         for (final ProcessorNode node : processors) {
@@ -130,6 +132,15 @@ public class StandardControllerServiceProvider implements ControllerServiceProvi
 
             if (node.getScheduledState() != ScheduledState.DISABLED) {
                 node.verifyCanStart();
+            }
+        }
+        for (final FlowAnalysisRuleNode node : flowAnalysisRuleNodes) {
+            if (candidates != null && !candidates.contains(node)) {
+                continue;
+            }
+
+            if (!node.isEnabled()) {
+                node.verifyCanEnable();
             }
         }
 
@@ -155,6 +166,16 @@ public class StandardControllerServiceProvider implements ControllerServiceProvi
                 updated.add(node);
             }
         }
+        for (final FlowAnalysisRuleNode node : flowAnalysisRuleNodes) {
+            if (candidates != null && !candidates.contains(node)) {
+                continue;
+            }
+
+            if (!node.isEnabled()) {
+                node.enable();
+                updated.add(node);
+            }
+        }
 
         return updated;
     }
@@ -165,6 +186,7 @@ public class StandardControllerServiceProvider implements ControllerServiceProvi
         // or a service that references this controller service, etc.
         final List<ProcessorNode> processors = serviceNode.getReferences().findRecursiveReferences(ProcessorNode.class);
         final List<ReportingTaskNode> reportingTasks = serviceNode.getReferences().findRecursiveReferences(ReportingTaskNode.class);
+        final List<FlowAnalysisRuleNode> flowAnalysisRuleNodes = serviceNode.getReferences().findRecursiveReferences(FlowAnalysisRuleNode.class);
 
         final Map<ComponentNode, Future<Void>> updated = new HashMap<>();
 
@@ -179,6 +201,11 @@ public class StandardControllerServiceProvider implements ControllerServiceProvi
                 node.verifyCanStop();
             }
         }
+        for (final FlowAnalysisRuleNode node : flowAnalysisRuleNodes) {
+            if (node.isEnabled()) {
+                node.verifyCanDisable();
+            }
+        }
 
         // stop all of the components that are running
         for (final ProcessorNode node : processors) {
@@ -190,6 +217,13 @@ public class StandardControllerServiceProvider implements ControllerServiceProvi
         for (final ReportingTaskNode node : reportingTasks) {
             if (node.getScheduledState() == ScheduledState.RUNNING) {
                 final Future<Void> future = processScheduler.unschedule(node);
+                updated.put(node, future);
+            }
+        }
+        for (final FlowAnalysisRuleNode node : flowAnalysisRuleNodes) {
+            if (node.isEnabled()) {
+                node.disable();
+                final Future<Void> future = CompletableFuture.completedFuture(null);
                 updated.put(node, future);
             }
         }
@@ -497,16 +531,19 @@ public class StandardControllerServiceProvider implements ControllerServiceProvi
             if (serviceNode == null) {
                 final ReportingTaskNode taskNode = flowManager.getReportingTaskNode(componentId);
                 if (taskNode == null) {
-                    final ParameterProviderNode parameterProviderNode = flowManager.getParameterProvider(componentId);
-                    if (parameterProviderNode == null) {
-                        final FlowRegistryClientNode flowRegistryClientNode = flowManager.getFlowRegistryClient(componentId);
-                        if (flowRegistryClientNode == null) {
-                            throw new IllegalStateException("Could not find any Processor, Reporting Task, Parameter Provider, or Controller Service with identifier " + componentId);
+                    final FlowAnalysisRuleNode flowAnalysisRuleNode = flowManager.getFlowAnalysisRuleNode(componentId);
+                    if (flowAnalysisRuleNode == null) {
+                        final ParameterProviderNode parameterProviderNode = flowManager.getParameterProvider(componentId);
+                        if (parameterProviderNode == null) {
+                            final FlowRegistryClientNode flowRegistryClientNode = flowManager.getFlowRegistryClient(componentId);
+                            if (flowRegistryClientNode == null) {
+                                throw new IllegalStateException("Could not find any Processor, Reporting Task, Parameter Provider, or Controller Service with identifier " + componentId);
+                            }
                         }
                     }
                 }
 
-                // We have confirmed that the component is a reporting task or parameter provider. We can only reference Controller Services
+                // We have confirmed that the component is a reporting task or a flow analysis rule or parameter provider. We can only reference Controller Services
                 // that are scoped at the FlowController level in this case.
                 final ControllerServiceNode rootServiceNode = flowManager.getRootControllerService(serviceIdentifier);
                 return (rootServiceNode == null) ? null : rootServiceNode.getProxiedControllerService();
@@ -602,6 +639,8 @@ public class StandardControllerServiceProvider implements ControllerServiceProvi
         LogRepositoryFactory.removeRepository(serviceNode.getIdentifier());
         extensionManager.removeInstanceClassLoader(serviceNode.getIdentifier());
         serviceCache.remove(serviceNode.getIdentifier());
+
+        flowManager.getFlowAnalysisContext().removeRuleViolationsForSubject(serviceNode.getIdentifier());
     }
 
     @Override
@@ -659,6 +698,7 @@ public class StandardControllerServiceProvider implements ControllerServiceProvi
     public void verifyCanScheduleReferencingComponents(final ControllerServiceNode serviceNode) {
         final List<ControllerServiceNode> referencingServices = serviceNode.getReferences().findRecursiveReferences(ControllerServiceNode.class);
         final List<ReportingTaskNode> referencingReportingTasks = serviceNode.getReferences().findRecursiveReferences(ReportingTaskNode.class);
+        final List<FlowAnalysisRuleNode> referencingFlowAnalysisRuleNodes = serviceNode.getReferences().findRecursiveReferences(FlowAnalysisRuleNode.class);
         final List<ProcessorNode> referencingProcessors = serviceNode.getReferences().findRecursiveReferences(ProcessorNode.class);
 
         final Set<ControllerServiceNode> referencingServiceSet = new HashSet<>(referencingServices);
@@ -667,6 +707,10 @@ public class StandardControllerServiceProvider implements ControllerServiceProvi
             if (taskNode.getScheduledState() != ScheduledState.DISABLED) {
                 taskNode.verifyCanStart(referencingServiceSet);
             }
+        }
+
+        for (final FlowAnalysisRuleNode ruleNode : referencingFlowAnalysisRuleNodes) {
+            ruleNode.verifyCanEnable(referencingServiceSet);
         }
 
         for (final ProcessorNode procNode : referencingProcessors) {

@@ -30,6 +30,8 @@ import org.apache.nifi.components.ValidationContext;
 import org.apache.nifi.components.state.StateManagerProvider;
 import org.apache.nifi.controller.exception.ControllerServiceInstantiationException;
 import org.apache.nifi.controller.exception.ProcessorInstantiationException;
+import org.apache.nifi.controller.flowanalysis.FlowAnalysisRuleInstantiationException;
+import org.apache.nifi.controller.flowanalysis.FlowAnalyzer;
 import org.apache.nifi.controller.kerberos.KerberosConfig;
 import org.apache.nifi.controller.repository.FlowFileEventRepository;
 import org.apache.nifi.controller.scheduling.LifecycleState;
@@ -69,6 +71,7 @@ import org.apache.nifi.util.MockPropertyValue;
 import org.apache.nifi.util.MockVariableRegistry;
 import org.apache.nifi.util.NiFiProperties;
 import org.apache.nifi.util.SynchronousValidationTrigger;
+import org.apache.nifi.validation.FlowAnalysisContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -598,6 +601,11 @@ public class StandardProcessorNodeIT {
         }
 
         @Override
+        public void reload(FlowAnalysisRuleNode existingNode, String newType, BundleCoordinate bundleCoordinate, Set<URL> additionalUrls) throws FlowAnalysisRuleInstantiationException {
+            reload(newType, additionalUrls);
+        }
+
+        @Override
         public void reload(ParameterProviderNode existingNode, String newType, BundleCoordinate bundleCoordinate, Set<URL> additionalUrls) {
             reload(newType, additionalUrls);
         }
@@ -724,6 +732,15 @@ public class StandardProcessorNodeIT {
             }
         };
 
+        @Override
+        public FlowAnalysisContext getFlowAnalysisContext() {
+            return null;
+        }
+
+        @Override
+        public FlowAnalyzer getFlowAnalyzer() {
+            return null;
+        }
     }
 
 

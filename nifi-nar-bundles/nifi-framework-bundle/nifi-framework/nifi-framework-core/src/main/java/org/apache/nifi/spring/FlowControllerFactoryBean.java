@@ -22,6 +22,7 @@ import org.apache.nifi.cluster.coordination.ClusterCoordinator;
 import org.apache.nifi.cluster.coordination.heartbeat.HeartbeatMonitor;
 import org.apache.nifi.cluster.protocol.NodeProtocolSender;
 import org.apache.nifi.controller.FlowController;
+import org.apache.nifi.controller.flowanalysis.FlowAnalyzer;
 import org.apache.nifi.controller.leader.election.LeaderElectionManager;
 import org.apache.nifi.controller.repository.FlowFileEventRepository;
 import org.apache.nifi.controller.status.history.StatusHistoryRepository;
@@ -30,6 +31,7 @@ import org.apache.nifi.nar.ExtensionManager;
 import org.apache.nifi.registry.VariableRegistry;
 import org.apache.nifi.reporting.BulletinRepository;
 import org.apache.nifi.util.NiFiProperties;
+import org.apache.nifi.validation.FlowAnalysisContext;
 import org.apache.nifi.web.revision.RevisionManager;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.FactoryBean;
@@ -54,6 +56,8 @@ public class FlowControllerFactoryBean implements FactoryBean, ApplicationContex
     private LeaderElectionManager leaderElectionManager;
     private ExtensionManager extensionManager;
     private RevisionManager revisionManager;
+    private FlowAnalysisContext flowAnalysisContext;
+    private FlowAnalyzer flowAnalyzer;
     private StatusHistoryRepository statusHistoryRepository;
 
     @Override
@@ -92,6 +96,12 @@ public class FlowControllerFactoryBean implements FactoryBean, ApplicationContex
                     statusHistoryRepository);
             }
 
+            flowController.setFlowAnalysisContext(flowAnalysisContext);
+
+            flowAnalyzer.setFlowAnalysisRuleProvider(flowController);
+            flowAnalyzer.setExtensionManager(extensionManager);
+            flowAnalyzer.setControllerServiceProvider(flowController.getControllerServiceProvider());
+            flowController.setFlowAnalyzer(flowAnalyzer);
         }
 
         return flowController;
@@ -152,6 +162,18 @@ public class FlowControllerFactoryBean implements FactoryBean, ApplicationContex
 
     public void setRevisionManager(final RevisionManager revisionManager) {
         this.revisionManager = revisionManager;
+    }
+
+    public void setFlowAnalysisContext(FlowAnalysisContext flowAnalysisContext) {
+        this.flowAnalysisContext = flowAnalysisContext;
+    }
+
+    public void setFlowAnalyzer(FlowAnalyzer flowAnalyzer) {
+        this.flowAnalyzer = flowAnalyzer;
+    }
+
+    public void setFlowController(FlowController flowController) {
+        this.flowController = flowController;
     }
 
     public void setStatusHistoryRepository(StatusHistoryRepository statusHistoryRepository) {

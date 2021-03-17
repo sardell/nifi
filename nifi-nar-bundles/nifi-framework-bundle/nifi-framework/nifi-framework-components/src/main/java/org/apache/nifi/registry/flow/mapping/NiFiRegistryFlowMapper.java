@@ -97,6 +97,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -105,8 +106,11 @@ public class NiFiRegistryFlowMapper {
     private static final String ENCRYPTED_SUFFIX = "}";
     private static final String REGISTRY_URL_DESCRIPTOR_NAME = "url";
 
+    public static final Function<String, String> DEFAULT_VERSIONED_UUID_GENERATOR = componentId -> UUID.nameUUIDFromBytes(componentId.getBytes(StandardCharsets.UTF_8)).toString();
+
     private final ExtensionManager extensionManager;
     private final FlowMappingOptions flowMappingOptions;
+    private final Function<String, String> versionedUuidGenerator;
 
     // We need to keep a mapping of component id to versionedComponentId as we transform these objects. This way, when
     // we call #mapConnectable, instead of generating a new UUID for the ConnectableComponent, we can lookup the 'versioned'
@@ -114,13 +118,46 @@ public class NiFiRegistryFlowMapper {
     // created before attempting to create the connection, where the ConnectableDTO is converted.
     private Map<String, String> versionedComponentIds = new HashMap<>();
 
-    public NiFiRegistryFlowMapper(final ExtensionManager extensionManager) {
-        this(extensionManager, FlowMappingOptions.DEFAULT_OPTIONS);
+    public NiFiRegistryFlowMapper(
+        final ExtensionManager extensionManager
+    ) {
+        this(
+            extensionManager,
+            FlowMappingOptions.DEFAULT_OPTIONS,
+            DEFAULT_VERSIONED_UUID_GENERATOR
+        );
     }
 
-    public NiFiRegistryFlowMapper(final ExtensionManager extensionManager, final FlowMappingOptions flowMappingOptions) {
+    public NiFiRegistryFlowMapper(
+        final ExtensionManager extensionManager,
+        final FlowMappingOptions flowMappingOptions
+    ) {
+        this(
+            extensionManager,
+            flowMappingOptions,
+            DEFAULT_VERSIONED_UUID_GENERATOR
+        );
+    }
+
+    public NiFiRegistryFlowMapper(
+        final ExtensionManager extensionManager,
+        final Function<String, String> versionedUuidGenerator
+    ) {
+        this(
+            extensionManager,
+            FlowMappingOptions.DEFAULT_OPTIONS,
+            versionedUuidGenerator
+        );
+    }
+
+    public NiFiRegistryFlowMapper(
+        final ExtensionManager extensionManager,
+        final FlowMappingOptions flowMappingOptions,
+        final Function<String, String> versionedUuidGenerator
+    ) {
         this.extensionManager = extensionManager;
         this.flowMappingOptions = flowMappingOptions;
+        this.versionedUuidGenerator = versionedUuidGenerator;
     }
 
     /**
@@ -333,7 +370,7 @@ public class NiFiRegistryFlowMapper {
     }
 
     private String getId(final Optional<String> currentVersionedId, final String componentId) {
-        final String versionedId = flowMappingOptions.getComponentIdLookup().getComponentId(currentVersionedId, componentId);
+        final String versionedId = flowMappingOptions.getComponentIdLookup().getComponentId(currentVersionedId, componentId, versionedUuidGenerator);
         versionedComponentIds.put(componentId, versionedId);
         return versionedId;
     }
@@ -346,7 +383,11 @@ public class NiFiRegistryFlowMapper {
      * @return a deterministic versioned component identifier
      */
     public static String generateVersionedComponentId(final String componentId) {
-        return UUID.nameUUIDFromBytes(componentId.getBytes(StandardCharsets.UTF_8)).toString();
+        return generateVersionedComponentId(componentId, DEFAULT_VERSIONED_UUID_GENERATOR);
+    }
+
+    private static String generateVersionedComponentId(final String componentId, Function<String, String> versionedUuidGenerator) {
+        return versionedUuidGenerator.apply(componentId);
     }
 
     private <E extends Exception> String getIdOrThrow(final String componentId, final Supplier<E> exceptionSupplier) throws E {
@@ -589,6 +630,7 @@ public class NiFiRegistryFlowMapper {
             versionedDescriptor.setName(descriptor.getName());
             versionedDescriptor.setDisplayName(descriptor.getDisplayName());
             versionedDescriptor.setSensitive(descriptor.isSensitive());
+            versionedDescriptor.setDynamic(descriptor.isDynamic());
 
             final VersionedResourceDefinition versionedResourceDefinition = mapResourceDefinition(descriptor.getResourceDefinition());
             versionedDescriptor.setResourceDefinition(versionedResourceDefinition);

@@ -26,6 +26,7 @@ import org.apache.nifi.connectable.Connection;
 import org.apache.nifi.connectable.Funnel;
 import org.apache.nifi.connectable.Port;
 import org.apache.nifi.controller.ParameterProviderNode;
+import org.apache.nifi.controller.FlowAnalysisRuleNode;
 import org.apache.nifi.controller.ProcessScheduler;
 import org.apache.nifi.controller.ProcessorNode;
 import org.apache.nifi.controller.ReportingTaskNode;
@@ -48,6 +49,8 @@ import org.apache.nifi.registry.flow.FlowRegistryClientNode;
 import org.apache.nifi.remote.PublicPort;
 import org.apache.nifi.remote.RemoteGroupPort;
 import org.apache.nifi.util.ReflectionUtils;
+import org.apache.nifi.web.api.entity.ParameterContextReferenceEntity;
+import org.apache.nifi.validation.FlowAnalysisContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -73,6 +76,7 @@ public abstract class AbstractFlowManager implements FlowManager {
     private final ConcurrentMap<String, Port> allOutputPorts = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, Funnel> allFunnels = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, ReportingTaskNode> allReportingTasks = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, FlowAnalysisRuleNode> allFlowAnalysisRules = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, ParameterProviderNode> allParameterProviders = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, FlowRegistryClientNode> allFlowRegistryClients = new ConcurrentHashMap<>();
 
@@ -81,6 +85,7 @@ public abstract class AbstractFlowManager implements FlowManager {
     private final BooleanSupplier flowInitializedCheck;
 
     private volatile ControllerServiceProvider controllerServiceProvider;
+    private volatile FlowAnalysisContext flowAnalysisContext;
     private volatile ProcessGroup rootGroup;
 
     private final ThreadLocal<Boolean> withParameterContextResolution = ThreadLocal.withInitial(() -> false);
@@ -105,7 +110,10 @@ public abstract class AbstractFlowManager implements FlowManager {
     }
 
     public void onProcessGroupRemoved(final ProcessGroup group) {
-        allProcessGroups.remove(group.getIdentifier());
+        String identifier = group.getIdentifier();
+        allProcessGroups.remove(identifier);
+
+        flowAnalysisContext.removeRuleViolationsForSubject(identifier);
     }
 
     public void onProcessorAdded(final ProcessorNode procNode) {
@@ -116,6 +124,8 @@ public abstract class AbstractFlowManager implements FlowManager {
         String identifier = procNode.getIdentifier();
         flowFileEventRepository.purgeTransferEvents(identifier);
         allProcessors.remove(identifier);
+
+        flowAnalysisContext.removeRuleViolationsForSubject(identifier);
     }
 
     public Set<ProcessorNode> findAllProcessors(final Predicate<ProcessorNode> filter) {
@@ -169,6 +179,8 @@ public abstract class AbstractFlowManager implements FlowManager {
         String identifier = connection.getIdentifier();
         flowFileEventRepository.purgeTransferEvents(identifier);
         allConnections.remove(identifier);
+
+        flowAnalysisContext.removeRuleViolationsForSubject(identifier);
     }
 
     public Connection getConnection(final String id) {
@@ -217,6 +229,7 @@ public abstract class AbstractFlowManager implements FlowManager {
         componentCounts.put("Processors", allProcessors.size());
         componentCounts.put("Controller Services", getAllControllerServices().size());
         componentCounts.put("Reporting Tasks", getAllReportingTasks().size());
+        componentCounts.put("Flow Analysis Rules", getAllFlowAnalysisRules().size());
         componentCounts.put("Process Groups", allProcessGroups.size() - 2); // -2 to account for the root group because we don't want it in our counts and the 'root group alias' key.
         componentCounts.put("Remote Process Groups", getRootGroup().findAllRemoteProcessGroups().size());
         componentCounts.put("Parameter Providers", getAllParameterProviders().size());
@@ -277,6 +290,7 @@ public abstract class AbstractFlowManager implements FlowManager {
 
         getRootControllerServices().forEach(this::removeRootControllerService);
         getAllReportingTasks().forEach(this::removeReportingTask);
+        getAllFlowAnalysisRules().forEach(this::removeFlowAnalysisRule);
         getAllParameterProviders().forEach(this::removeParameterProvider);
 
         getAllFlowRegistryClients().forEach(this::removeFlowRegistryClientNode);
@@ -295,6 +309,10 @@ public abstract class AbstractFlowManager implements FlowManager {
 
         for (final ReportingTaskNode reportingTask : getAllReportingTasks()) {
             reportingTask.verifyCanDelete();
+        }
+
+        for (final FlowAnalysisRuleNode flowAnalysisRule : getAllFlowAnalysisRules()) {
+            flowAnalysisRule.verifyCanDelete();
         }
 
         for (final ParameterProviderNode parameterProvider : getAllParameterProviders()) {
@@ -324,6 +342,8 @@ public abstract class AbstractFlowManager implements FlowManager {
         String identifier = inputPort.getIdentifier();
         flowFileEventRepository.purgeTransferEvents(identifier);
         allInputPorts.remove(identifier);
+
+        flowAnalysisContext.removeRuleViolationsForSubject(identifier);
     }
 
     public Port getInputPort(final String id) {
@@ -338,6 +358,8 @@ public abstract class AbstractFlowManager implements FlowManager {
         String identifier = outputPort.getIdentifier();
         flowFileEventRepository.purgeTransferEvents(identifier);
         allOutputPorts.remove(identifier);
+
+        flowAnalysisContext.removeRuleViolationsForSubject(identifier);
     }
 
     public Port getOutputPort(final String id) {
@@ -352,6 +374,8 @@ public abstract class AbstractFlowManager implements FlowManager {
         String identifier = funnel.getIdentifier();
         flowFileEventRepository.purgeTransferEvents(identifier);
         allFunnels.remove(identifier);
+
+        flowAnalysisContext.removeRuleViolationsForSubject(identifier);
     }
 
     public Funnel getFunnel(final String id) {
@@ -424,6 +448,68 @@ public abstract class AbstractFlowManager implements FlowManager {
 
     public void onReportingTaskAdded(final ReportingTaskNode taskNode) {
         allReportingTasks.put(taskNode.getIdentifier(), taskNode);
+    }
+
+    @Override
+    public FlowAnalysisRuleNode createFlowAnalysisRule(final String type, final BundleCoordinate bundleCoordinate) {
+        return createFlowAnalysisRule(type, bundleCoordinate, true);
+    }
+
+    @Override
+    public FlowAnalysisRuleNode createFlowAnalysisRule(final String type, final BundleCoordinate bundleCoordinate, final boolean firstTimeAdded) {
+        return createFlowAnalysisRule(type, UUID.randomUUID().toString(), bundleCoordinate, firstTimeAdded);
+    }
+
+    @Override
+    public FlowAnalysisRuleNode createFlowAnalysisRule(final String type, final String id, final BundleCoordinate bundleCoordinate, final boolean firstTimeAdded) {
+        return createFlowAnalysisRule(type, id, bundleCoordinate, Collections.emptySet(), firstTimeAdded, true);
+    }
+
+    @Override
+    public FlowAnalysisRuleNode getFlowAnalysisRuleNode(final String taskId) {
+        return allFlowAnalysisRules.get(taskId);
+    }
+
+    @Override
+    public void removeFlowAnalysisRule(final FlowAnalysisRuleNode flowAnalysisRuleNode) {
+        final FlowAnalysisRuleNode existing = allFlowAnalysisRules.get(flowAnalysisRuleNode.getIdentifier());
+        if (existing == null || existing != flowAnalysisRuleNode) {
+            throw new IllegalStateException("Flow Analysis Rule " + flowAnalysisRuleNode + " does not exist in this Flow");
+        }
+
+        flowAnalysisRuleNode.verifyCanDelete();
+
+        final Class<?> taskClass = flowAnalysisRuleNode.getFlowAnalysisRule().getClass();
+        try (final NarCloseable x = NarCloseable.withComponentNarLoader(getExtensionManager(), taskClass, flowAnalysisRuleNode.getFlowAnalysisRule().getIdentifier())) {
+            ReflectionUtils.quietlyInvokeMethodsWithAnnotation(OnRemoved.class, flowAnalysisRuleNode.getFlowAnalysisRule(), flowAnalysisRuleNode.getConfigurationContext());
+        }
+
+        for (final Map.Entry<PropertyDescriptor, String> entry : flowAnalysisRuleNode.getEffectivePropertyValues().entrySet()) {
+            final PropertyDescriptor descriptor = entry.getKey();
+            if (descriptor.getControllerServiceDefinition() != null) {
+                final String value = entry.getValue() == null ? descriptor.getDefaultValue() : entry.getValue();
+                if (value != null) {
+                    final ControllerServiceNode serviceNode = controllerServiceProvider.getControllerServiceNode(value);
+                    if (serviceNode != null) {
+                        serviceNode.removeReference(flowAnalysisRuleNode, descriptor);
+                    }
+                }
+            }
+        }
+
+        allFlowAnalysisRules.remove(flowAnalysisRuleNode.getIdentifier());
+        LogRepositoryFactory.removeRepository(flowAnalysisRuleNode.getIdentifier());
+
+        getExtensionManager().removeInstanceClassLoader(flowAnalysisRuleNode.getIdentifier());
+    }
+
+    @Override
+    public Set<FlowAnalysisRuleNode> getAllFlowAnalysisRules() {
+        return new HashSet<>(allFlowAnalysisRules.values());
+    }
+
+    protected void onFlowAnalysisRuleAdded(final FlowAnalysisRuleNode flowAnalysisRuleNode) {
+        allFlowAnalysisRules.put(flowAnalysisRuleNode.getIdentifier(), flowAnalysisRuleNode);
     }
 
     @Override
@@ -598,4 +684,13 @@ public abstract class AbstractFlowManager implements FlowManager {
     }
 
     protected abstract Authorizable getParameterContextParent();
+
+    public void setFlowAnalysisContext(FlowAnalysisContext flowAnalysisContext) {
+        this.flowAnalysisContext = flowAnalysisContext;
+    }
+
+    @Override
+    public FlowAnalysisContext getFlowAnalysisContext() {
+        return flowAnalysisContext;
+    }
 }

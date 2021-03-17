@@ -772,4 +772,10 @@ public class StandardControllerServiceNode extends AbstractComponentNode impleme
         this.bulletinLevel = level;
     }
 
+
+    @Override
+    protected void analyze() {
+        Optional.ofNullable(getValidationContextFactory().getFlowAnalyzer())
+            .ifPresent(flowAnalyzer -> flowAnalyzer.analyzeControllerService(this));
+    }
 }
