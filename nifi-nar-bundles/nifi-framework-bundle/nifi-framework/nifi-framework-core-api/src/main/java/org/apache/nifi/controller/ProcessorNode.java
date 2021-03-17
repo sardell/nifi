@@ -38,6 +38,7 @@ import org.apache.nifi.scheduling.SchedulingStrategy;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
@@ -294,6 +295,12 @@ public abstract class ProcessorNode extends AbstractComponentNode implements Con
      * @return the desired state for this Processor
      */
     public abstract ScheduledState getDesiredState();
+
+    @Override
+    protected void analyze() {
+        Optional.ofNullable(getValidationContextFactory().getFlowAnalyzer())
+            .ifPresent(flowAnalyzer -> flowAnalyzer.analyzeProcessor(this));
+    }
 
     /**
      * This method will be called once the processor's configuration has been restored (on startup, reload, e.g.)

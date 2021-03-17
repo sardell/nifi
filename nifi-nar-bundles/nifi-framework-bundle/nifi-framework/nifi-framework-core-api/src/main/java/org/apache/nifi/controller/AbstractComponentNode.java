@@ -43,6 +43,7 @@ import org.apache.nifi.controller.service.ControllerServiceDisabledException;
 import org.apache.nifi.controller.service.ControllerServiceNode;
 import org.apache.nifi.controller.service.ControllerServiceProvider;
 import org.apache.nifi.controller.service.ControllerServiceState;
+import org.apache.nifi.flowanalysis.EnforcementPolicy;
 import org.apache.nifi.nar.ExtensionManager;
 import org.apache.nifi.nar.NarCloseable;
 import org.apache.nifi.parameter.ExpressionLanguageAgnosticParameterParser;
@@ -59,6 +60,7 @@ import org.apache.nifi.registry.ComponentVariableRegistry;
 import org.apache.nifi.util.CharacterFilterUtils;
 import org.apache.nifi.util.FormatUtils;
 import org.apache.nifi.util.file.classloader.ClassLoaderUtils;
+import org.apache.nifi.validation.RuleViolation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -748,6 +750,7 @@ public abstract class AbstractComponentNode implements ComponentNode {
 
     protected Collection<ValidationResult> computeValidationErrors(final ValidationContext validationContext) {
         Throwable failureCause = null;
+
         try {
             if (!sensitiveDynamicPropertyNames.get().isEmpty() && !isSupportsSensitiveDynamicProperties()) {
                 return Collections.singletonList(
@@ -775,6 +778,23 @@ public abstract class AbstractComponentNode implements ComponentNode {
             // validate selected controller services implement the API required by the processor
             final Collection<ValidationResult> referencedServiceValidationResults = validateReferencedControllerServices(validationContext);
             validationResults.addAll(referencedServiceValidationResults);
+
+            analyze();
+
+            Optional.ofNullable(getValidationContextFactory().getRuleViolationsManager())
+                .map(ruleViolationsManager -> ruleViolationsManager.getRuleViolationsForSubject(getIdentifier()))
+                .map(Collection::stream)
+                .ifPresent(ruleViolationStream -> ruleViolationStream
+                    .filter(ruleViolation -> ruleViolation.getEnforcementPolicy() == EnforcementPolicy.ENFORCE)
+                    .filter(RuleViolation::isEnabled)
+                    .forEach(ruleViolation -> validationResults.add(
+                        new ValidationResult.Builder()
+                            .subject(getComponent().getClass().getSimpleName())
+                            .valid(false)
+                            .explanation(ruleViolation.getViolationMessage())
+                            .build()
+                    )
+                ));
 
             logger.debug("Computed validation errors with Validation Context {}; results = {}", validationContext, validationResults);
 
@@ -913,7 +933,6 @@ public abstract class AbstractComponentNode implements ComponentNode {
         return validationResults;
     }
 
-
     private ValidationResult validateControllerServiceApi(final PropertyDescriptor descriptor, final ControllerServiceNode controllerServiceNode) {
         final Class<? extends ControllerService> controllerServiceApiClass = descriptor.getControllerServiceDefinition();
         // If a processor accepts any service don't validate it.
@@ -972,6 +991,9 @@ public abstract class AbstractComponentNode implements ComponentNode {
         }
 
         return null;
+    }
+
+    protected void analyze() {
     }
 
     private ValidationResult createInvalidResult(final String serviceId, final String propertyName, final String explanation) {

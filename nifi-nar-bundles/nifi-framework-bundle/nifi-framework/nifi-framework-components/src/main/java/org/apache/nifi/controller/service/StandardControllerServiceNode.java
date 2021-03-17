@@ -788,4 +788,10 @@ public class StandardControllerServiceNode extends AbstractComponentNode impleme
         }
     }
 
+
+    @Override
+    protected void analyze() {
+        Optional.ofNullable(getValidationContextFactory().getFlowAnalyzer())
+            .ifPresent(flowAnalyzer -> flowAnalyzer.analyzeControllerService(this));
+    }
 }

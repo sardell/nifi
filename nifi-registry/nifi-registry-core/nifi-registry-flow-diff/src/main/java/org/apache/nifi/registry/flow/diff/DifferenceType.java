@@ -94,6 +94,11 @@ public enum DifferenceType {
     CONCURRENT_TASKS_CHANGED("Concurrent Tasks Changed"),
 
     /**
+     * The component has a different enforcement policy in each of the flows
+     */
+    ENFORCEMENT_POLICY_CHANGED("Enforcement Policy Changed"),
+
+    /**
      * The component has a different run schedule in each of the flows
      */
     RUN_SCHEDULE_CHANGED("Run Schedule Changed"),

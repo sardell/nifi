@@ -18,6 +18,7 @@
 package org.apache.nifi.controller.flow;
 
 import org.apache.nifi.flow.VersionedControllerService;
+import org.apache.nifi.flow.VersionedFlowAnalysisRule;
 import org.apache.nifi.flow.VersionedFlowRegistryClient;
 import org.apache.nifi.flow.VersionedParameterProvider;
 import org.apache.nifi.flow.VersionedProcessGroup;
@@ -36,6 +37,7 @@ public class VersionedDataflow {
     private List<VersionedParameterProvider> parameterProviders;
     private List<VersionedControllerService> controllerServices;
     private List<VersionedReportingTask> reportingTasks;
+    private List<VersionedFlowAnalysisRule> flowAnalysisRules;
     private Set<VersionedTemplate> templates;
     private VersionedProcessGroup rootGroup;
 
@@ -95,6 +97,14 @@ public class VersionedDataflow {
 
     public void setReportingTasks(final List<VersionedReportingTask> reportingTasks) {
         this.reportingTasks = reportingTasks;
+    }
+
+    public List<VersionedFlowAnalysisRule> getFlowAnalysisRules() {
+        return flowAnalysisRules;
+    }
+
+    public void setFlowAnalysisRules(List<VersionedFlowAnalysisRule> flowAnalysisRules) {
+        this.flowAnalysisRules = flowAnalysisRules;
     }
 
     public List<VersionedParameterProvider> getParameterProviders() {

@@ -18,6 +18,7 @@
 package org.apache.nifi.controller.serialization;
 
 import org.apache.nifi.connectable.Port;
+import org.apache.nifi.controller.FlowAnalysisRuleNode;
 import org.apache.nifi.controller.ProcessorNode;
 import org.apache.nifi.controller.ReportingTaskNode;
 import org.apache.nifi.controller.service.ControllerServiceNode;
@@ -28,6 +29,8 @@ public interface ComponentSetFilter {
     boolean testProcessor(ProcessorNode processor);
 
     boolean testReportingTask(ReportingTaskNode reportingTask);
+
+    boolean testFlowAnalysisRule(FlowAnalysisRuleNode flowAnalysisRule);
 
     boolean testControllerService(ControllerServiceNode controllerService);
 
@@ -53,6 +56,11 @@ public interface ComponentSetFilter {
             @Override
             public boolean testReportingTask(final ReportingTaskNode reportingTask) {
                 return !original.testReportingTask(reportingTask);
+            }
+
+            @Override
+            public boolean testFlowAnalysisRule(FlowAnalysisRuleNode flowAnalysisRule) {
+                return !original.testFlowAnalysisRule(flowAnalysisRule);
             }
 
             @Override
