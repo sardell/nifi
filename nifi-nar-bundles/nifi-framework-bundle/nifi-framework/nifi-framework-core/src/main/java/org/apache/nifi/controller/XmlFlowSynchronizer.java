@@ -73,8 +73,7 @@ import org.apache.nifi.parameter.ParameterDescriptor;
 import org.apache.nifi.parameter.ParameterProviderConfiguration;
 import org.apache.nifi.parameter.StandardParameterProviderConfiguration;
 import org.apache.nifi.processor.Relationship;
-import org.apache.nifi.registry.flow.FlowRegistry;
-import org.apache.nifi.registry.flow.FlowRegistryClient;
+import org.apache.nifi.registry.flow.FlowRegistryClientNode;
 import org.apache.nifi.registry.flow.StandardVersionControlInformation;
 import org.apache.nifi.registry.flow.VersionedFlowState;
 import org.apache.nifi.remote.PublicPort;
@@ -93,6 +92,7 @@ import org.apache.nifi.web.api.dto.ComponentReferenceDTO;
 import org.apache.nifi.web.api.dto.ConnectableDTO;
 import org.apache.nifi.web.api.dto.ConnectionDTO;
 import org.apache.nifi.web.api.dto.ControllerServiceDTO;
+import org.apache.nifi.web.api.dto.FlowRegistryClientDTO;
 import org.apache.nifi.web.api.dto.FlowSnippetDTO;
 import org.apache.nifi.web.api.dto.FunnelDTO;
 import org.apache.nifi.web.api.dto.LabelDTO;
@@ -432,8 +432,14 @@ public class XmlFlowSynchronizer implements FlowSynchronizer {
                     final String registryUrl = getString(flowRegistryElement, "url");
                     final String description = getString(flowRegistryElement, "description");
 
-                    final FlowRegistryClient client = controller.getFlowRegistryClient();
-                    client.addFlowRegistry(registryId, registryName, registryUrl, description);
+                    final FlowManager client = controller.getFlowManager();
+                    final FlowRegistryClientDTO registryClientDTO = null; // TODO-2803 Create this
+//                    try {
+                        client.createFlowRegistryClient(null, registryId, null);
+                        // TODO config..
+//                    } catch (FlowRegistryException e) {
+//                        throw new ReportingTaskInstantiationException(e.getMessage()); // TODO-2803
+//                    }
                 }
             }
             controller.getFlowManager().withParameterContextResolution(() -> {
@@ -1465,7 +1471,7 @@ public class XmlFlowSynchronizer implements FlowSynchronizer {
     private void addVersionControlInfo(final ProcessGroup processGroup, final ProcessGroupDTO processGroupDTO, final FlowController flowController) {
         final VersionControlInformationDTO versionControlInfoDto = processGroupDTO.getVersionControlInformation();
         if (versionControlInfoDto != null) {
-            final FlowRegistry flowRegistry = flowController.getFlowRegistryClient().getFlowRegistry(versionControlInfoDto.getRegistryId());
+            final FlowRegistryClientNode flowRegistry = flowController.getFlowManager().getFlowRegistryClient(versionControlInfoDto.getRegistryId());
             final String registryName = flowRegistry == null ? versionControlInfoDto.getRegistryId() : flowRegistry.getName();
 
             versionControlInfoDto.setState(VersionedFlowState.SYNC_FAILURE.name());

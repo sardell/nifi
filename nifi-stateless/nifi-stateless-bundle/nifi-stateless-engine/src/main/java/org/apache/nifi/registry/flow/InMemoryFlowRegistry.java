@@ -17,7 +17,6 @@
 
 package org.apache.nifi.registry.flow;
 
-import org.apache.nifi.authorization.user.NiFiUser;
 import org.apache.nifi.flow.ExternalControllerServiceReference;
 import org.apache.nifi.flow.ParameterProviderReference;
 import org.apache.nifi.flow.VersionedExternalFlow;
@@ -36,7 +35,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class InMemoryFlowRegistry implements FlowRegistry {
+public class InMemoryFlowRegistry {
     private static final String USER_SPECIFIC_ACTIONS_NOT_SUPPORTED = "User-specific actions are not implemented with this Registry";
     private final AtomicInteger flowIdGenerator = new AtomicInteger(1);
     private static final String DEFAULT_BUCKET_ID = "stateless-bucket-1";
@@ -47,104 +46,103 @@ public class InMemoryFlowRegistry implements FlowRegistry {
 
     private final Map<FlowCoordinates, List<VersionedExternalFlow>> flowSnapshots = new ConcurrentHashMap<>();
 
-    @Override
+    //@Override
     public String getIdentifier() {
         return "in-memory-flow-registry";
     }
 
-    @Override
+//    @Override
     public String getDescription() {
         return description;
     }
 
-    @Override
+//    @Override
     public void setDescription(final String description) {
         this.description = description;
     }
 
-    @Override
+//    @Override
     public String getURL() {
         return url;
     }
 
-    @Override
+//    @Override
     public void setURL(final String url) {
         this.url = url;
     }
 
-    @Override
+//    @Override
     public String getName() {
         return name;
     }
 
-    @Override
+//    @Override
     public void setName(final String name) {
         this.name = name;
     }
 
-    @Override
-    public Set<Bucket> getBuckets(final NiFiUser user) {
+//    @Override
+    public Set<Bucket> getBuckets(final String user) {
         throw new UnsupportedOperationException(USER_SPECIFIC_ACTIONS_NOT_SUPPORTED);
     }
 
-    @Override
-    public Bucket getBucket(final String bucketId, final NiFiUser user) {
+//    @Override
+    public Bucket getBucket(final String bucketId, final String user) {
         throw new UnsupportedOperationException(USER_SPECIFIC_ACTIONS_NOT_SUPPORTED);
     }
 
-    @Override
-    public Set<VersionedFlow> getFlows(final String bucketId, final NiFiUser user) {
+//    @Override
+    public Set<VersionedFlow> getFlows(final String bucketId, final String user) {
         throw new UnsupportedOperationException(USER_SPECIFIC_ACTIONS_NOT_SUPPORTED);
     }
 
-    @Override
-    public Set<VersionedFlowSnapshotMetadata> getFlowVersions(final String bucketId, final String flowId, final NiFiUser user)  {
+//    @Override
+    public Set<VersionedFlowSnapshotMetadata> getFlowVersions(final String bucketId, final String flowId, final String user)  {
         throw new UnsupportedOperationException(USER_SPECIFIC_ACTIONS_NOT_SUPPORTED);
     }
 
-    @Override
-    public VersionedFlow registerVersionedFlow(final VersionedFlow flow, final NiFiUser user) {
+//    @Override
+    public VersionedFlow registerVersionedFlow(final VersionedFlow flow, final String user) {
         throw new UnsupportedOperationException(USER_SPECIFIC_ACTIONS_NOT_SUPPORTED);
     }
 
-    @Override
-    public VersionedFlow deleteVersionedFlow(final String bucketId, final String flowId, final NiFiUser user) {
+//    @Override
+    public VersionedFlow deleteVersionedFlow(final String bucketId, final String flowId, final String user) {
         throw new UnsupportedOperationException(USER_SPECIFIC_ACTIONS_NOT_SUPPORTED);
     }
 
-    @Override
+//    @Override
     public VersionedFlowSnapshot registerVersionedFlowSnapshot(final VersionedFlow flow, final VersionedProcessGroup snapshot,
                                                                final Map<String, ExternalControllerServiceReference> externalControllerServices,
                                                                final Map<String, VersionedParameterContext> parameterContexts,
                                                                final Map<String, ParameterProviderReference> parameterProviderReferences, final String comments,
-                                                               final int expectedVersion, final NiFiUser user) {
+                                                               final int expectedVersion, final String user) {
         throw new UnsupportedOperationException(USER_SPECIFIC_ACTIONS_NOT_SUPPORTED);
     }
 
-    @Override
-    public int getLatestVersion(final String bucketId, final String flowId, final NiFiUser user) {
+//    @Override
+    public int getLatestVersion(final String bucketId, final String flowId, final String user) {
         throw new UnsupportedOperationException(USER_SPECIFIC_ACTIONS_NOT_SUPPORTED);
     }
 
-    @Override
-    public VersionedFlowSnapshot getFlowContents(final String bucketId, final String flowId, final int version, final boolean fetchRemoteFlows, final NiFiUser user) {
+//    @Override
+    public VersionedFlow getVersionedFlow(final String bucketId, final String flowId, final String user) {
         throw new UnsupportedOperationException(USER_SPECIFIC_ACTIONS_NOT_SUPPORTED);
     }
 
-    @Override
-    public VersionedFlow getVersionedFlow(final String bucketId, final String flowId, final NiFiUser user) {
-        throw new UnsupportedOperationException(USER_SPECIFIC_ACTIONS_NOT_SUPPORTED);
-    }
+//    @Override
+    public VersionedFlowSnapshot getFlowContents(final String bucketId, final String flowId, final int version, final String user) throws NiFiRegistryException {
+        if (user != null) {
+            throw new UnsupportedOperationException(USER_SPECIFIC_ACTIONS_NOT_SUPPORTED);
+        }
 
-    @Override
-    public VersionedFlowSnapshot getFlowContents(final String bucketId, final String flowId, final int version, final boolean fetchRemoteFlows) throws NiFiRegistryException {
         final FlowCoordinates flowCoordinates = new FlowCoordinates(bucketId, flowId);
         final List<VersionedExternalFlow> snapshots = flowSnapshots.get(flowCoordinates);
 
         final VersionedExternalFlow versionedExternalFlow = snapshots.stream()
-            .filter(snapshot -> snapshot.getMetadata().getVersion() == version)
-            .findAny()
-            .orElseThrow(() -> new NiFiRegistryException("Could not find flow: bucketId=" + bucketId + ", flowId=" + flowId + ", version=" + version));
+                .filter(snapshot -> snapshot.getMetadata().getVersion() == version)
+                .findAny()
+                .orElseThrow(() -> new NiFiRegistryException("Could not find flow: bucketId=" + bucketId + ", flowId=" + flowId + ", version=" + version));
 
         final VersionedFlowSnapshot versionedFlowSnapshot = convertToVersionedFlowSnapshot(versionedExternalFlow);
         return versionedFlowSnapshot;
@@ -174,7 +172,7 @@ public class InMemoryFlowRegistry implements FlowRegistry {
         return flowSnapshot;
     }
 
-    @Override
+//    @Override
     public VersionedFlow getVersionedFlow(final String bucketId, final String flowId) {
         final FlowCoordinates flowCoordinates = new FlowCoordinates(bucketId, flowId);
         final List<VersionedExternalFlow> snapshots = flowSnapshots.get(flowCoordinates);

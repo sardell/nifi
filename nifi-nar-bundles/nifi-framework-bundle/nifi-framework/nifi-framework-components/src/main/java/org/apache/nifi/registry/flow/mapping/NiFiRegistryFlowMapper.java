@@ -33,6 +33,8 @@ import org.apache.nifi.controller.ProcessorNode;
 import org.apache.nifi.controller.PropertyConfiguration;
 import org.apache.nifi.controller.ReportingTaskNode;
 import org.apache.nifi.controller.ScheduledState;
+import org.apache.nifi.controller.flow.FlowManager;
+import org.apache.nifi.controller.flow.VersionedFlowRegistryClient;
 import org.apache.nifi.controller.label.Label;
 import org.apache.nifi.controller.queue.FlowFileQueue;
 import org.apache.nifi.controller.service.ControllerServiceNode;
@@ -43,6 +45,7 @@ import org.apache.nifi.flow.ComponentType;
 import org.apache.nifi.flow.ConnectableComponent;
 import org.apache.nifi.flow.ConnectableComponentType;
 import org.apache.nifi.flow.ControllerServiceAPI;
+import org.apache.nifi.flow.ExternalControllerServiceReference;
 import org.apache.nifi.flow.ExternalControllerServiceReference;
 import org.apache.nifi.flow.ParameterProviderReference;
 import org.apache.nifi.flow.PortType;
@@ -55,6 +58,8 @@ import org.apache.nifi.flow.VersionedLabel;
 import org.apache.nifi.flow.VersionedParameter;
 import org.apache.nifi.flow.VersionedParameterContext;
 import org.apache.nifi.flow.VersionedParameterProvider;
+import org.apache.nifi.flow.VersionedParameter;
+import org.apache.nifi.flow.VersionedParameterContext;
 import org.apache.nifi.flow.VersionedPort;
 import org.apache.nifi.flow.VersionedProcessGroup;
 import org.apache.nifi.flow.VersionedProcessor;
@@ -76,8 +81,7 @@ import org.apache.nifi.parameter.ParameterProviderConfiguration;
 import org.apache.nifi.parameter.ParameterReferencedControllerServiceData;
 import org.apache.nifi.processor.Relationship;
 import org.apache.nifi.registry.VariableDescriptor;
-import org.apache.nifi.registry.flow.FlowRegistry;
-import org.apache.nifi.registry.flow.FlowRegistryClient;
+import org.apache.nifi.registry.flow.FlowRegistryClientNode;
 import org.apache.nifi.registry.flow.VersionControlInformation;
 import org.apache.nifi.remote.PublicPort;
 import org.apache.nifi.remote.RemoteGroupPort;
@@ -97,7 +101,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
 
 public class NiFiRegistryFlowMapper {
     private static final String ENCRYPTED_PREFIX = "enc{";
@@ -141,12 +144,12 @@ public class NiFiRegistryFlowMapper {
      *
      * @param group             the process group to map
      * @param serviceProvider   the controller service provider to use for mapping
-     * @param registryClient    the registry client to use when retrieving versioning details
+     * @param flowManager    the registry client to use when retrieving versioning details
      * @param mapDescendantVersionedFlows  true in order to include descendant flows in the mapped result
      * @return a complete versioned process group with applicable registry related details
      */
     public InstantiatedVersionedProcessGroup mapProcessGroup(final ProcessGroup group, final ControllerServiceProvider serviceProvider,
-                                                             final FlowRegistryClient registryClient,
+                                                             final FlowManager flowManager,
                                                              final boolean mapDescendantVersionedFlows) {
         versionedComponentIds.clear();
 
@@ -157,12 +160,13 @@ public class NiFiRegistryFlowMapper {
             if (versionControlInfo != null) {
                 final VersionedFlowCoordinates coordinates = new VersionedFlowCoordinates();
                 final String registryId = versionControlInfo.getRegistryIdentifier();
-                final FlowRegistry registry = registryClient.getFlowRegistry(registryId);
+                final FlowRegistryClientNode registry = flowManager.getFlowRegistryClient(registryId);
                 if (registry == null) {
                     throw new IllegalStateException("Process Group refers to a Flow Registry with ID " + registryId + " but no Flow Registry exists with that ID. Cannot resolve to a URL.");
                 }
 
-                coordinates.setRegistryUrl(registry.getURL());
+                coordinates.setRegistryId(registryId);
+                coordinates.setRegistryUrl(getRegistryUrl(registry));
                 coordinates.setBucketId(versionControlInfo.getBucketIdentifier());
                 coordinates.setFlowId(versionControlInfo.getFlowIdentifier());
                 coordinates.setVersion(versionControlInfo.getVersion());
@@ -183,6 +187,11 @@ public class NiFiRegistryFlowMapper {
             }
             return true;
         });
+    }
+
+    // This is specific for the {@code NifiRegistryFlowRegistryClient}
+    private String getRegistryUrl(final FlowRegistryClientNode registry) {
+        return registry.getComponentType().equals("org.apache.nifi.registry.flow.NifiRegistryFlowRegistryClient") ? registry.getRawPropertyValue(registry.getPropertyDescriptor("URL")) : "";
     }
 
     private InstantiatedVersionedProcessGroup mapGroup(final ProcessGroup group, final ControllerServiceProvider serviceProvider,
@@ -452,6 +461,27 @@ public class NiFiRegistryFlowMapper {
         versionedParameterProvider.setType(parameterProviderNode.getCanonicalClassName());
 
         return versionedParameterProvider;
+    }
+
+    public VersionedFlowRegistryClient mapFlowRegistryClient(final FlowRegistryClientNode clientNode, final ControllerServiceProvider serviceProvider) {
+        final VersionedFlowRegistryClient versionedClient = new VersionedFlowRegistryClient();
+        versionedClient.setIdentifier(clientNode.getIdentifier());
+
+        if (flowMappingOptions.isMapInstanceIdentifiers()) {
+            versionedClient.setInstanceIdentifier(clientNode.getIdentifier());
+        }
+
+        versionedClient.setAnnotationData(clientNode.getAnnotationData());
+        versionedClient.setBundle(mapBundle(clientNode.getBundleCoordinate()));
+        versionedClient.setComponentType(ComponentType.FLOW_REGISTRY_CLIENT);
+        versionedClient.setName(clientNode.getName());
+        versionedClient.setDescription(clientNode.getDescription());
+
+        versionedClient.setProperties(mapProperties(clientNode, serviceProvider));
+        versionedClient.setPropertyDescriptors(mapPropertyDescriptors(clientNode, serviceProvider, Collections.emptySet(), Collections.emptyMap()));
+        versionedClient.setType(clientNode.getCanonicalClassName());
+
+        return versionedClient;
     }
 
     public VersionedControllerService mapControllerService(final ControllerServiceNode controllerService, final ControllerServiceProvider serviceProvider, final Set<String> includedGroupIds,

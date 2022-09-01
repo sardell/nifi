@@ -37,6 +37,7 @@ import org.apache.nifi.controller.flow.FlowManager;
 import org.apache.nifi.controller.service.ControllerServiceNode;
 import org.apache.nifi.controller.service.ControllerServiceProvider;
 import org.apache.nifi.flow.ExternalControllerServiceReference;
+import org.apache.nifi.flow.ExternalControllerServiceReference;
 import org.apache.nifi.flow.ParameterProviderReference;
 import org.apache.nifi.flow.VersionedControllerService;
 import org.apache.nifi.flow.VersionedParameterContext;
@@ -45,7 +46,8 @@ import org.apache.nifi.groups.RemoteProcessGroup;
 import org.apache.nifi.history.History;
 import org.apache.nifi.history.HistoryQuery;
 import org.apache.nifi.nar.ExtensionManager;
-import org.apache.nifi.registry.flow.RestBasedFlowRegistry;
+import org.apache.nifi.registry.flow.FlowRegistryUtil;
+import org.apache.nifi.registry.flow.RegisteredFlowSnapshot;
 import org.apache.nifi.registry.flow.VersionControlInformation;
 import org.apache.nifi.registry.flow.VersionedFlowSnapshot;
 import org.apache.nifi.registry.flow.mapping.InstantiatedVersionedProcessGroup;
@@ -379,13 +381,13 @@ public class StandardNiFiServiceFacadeTest {
         externalControllerServiceReferences.put("test", externalControllerServiceReference);
         when(nonVersionedProcessGroup.getExternalControllerServiceReferences()).thenReturn(externalControllerServiceReferences);
 
-        final VersionedFlowSnapshot versionedFlowSnapshot = serviceFacadeSpy.getCurrentFlowSnapshotByGroupId(groupId);
+        final RegisteredFlowSnapshot versionedFlowSnapshot = serviceFacadeSpy.getCurrentFlowSnapshotByGroupId(groupId);
 
         assertEquals(nonVersionedProcessGroup, versionedFlowSnapshot.getFlowContents());
         assertEquals(1, versionedFlowSnapshot.getParameterContexts().size());
         assertEquals(versionedParameterContext, versionedFlowSnapshot.getParameterContexts().get(parameterName));
         assertEquals(externalControllerServiceReferences, versionedFlowSnapshot.getExternalControllerServices());
-        assertEquals(RestBasedFlowRegistry.FLOW_ENCODING_VERSION, versionedFlowSnapshot.getFlowEncodingVersion());
+        assertEquals(FlowRegistryUtil.FLOW_ENCODING_VERSION, versionedFlowSnapshot.getFlowEncodingVersion());
         assertNull(versionedFlowSnapshot.getFlow());
         assertNull(versionedFlowSnapshot.getBucket());
         assertNull(versionedFlowSnapshot.getSnapshotMetadata());
@@ -441,7 +443,7 @@ public class StandardNiFiServiceFacadeTest {
         externalControllerServiceReferences.put("test", externalControllerServiceReference);
         when(nonVersionedProcessGroup.getExternalControllerServiceReferences()).thenReturn(externalControllerServiceReferences);
 
-        final VersionedFlowSnapshot versionedFlowSnapshot = serviceFacadeSpy.getCurrentFlowSnapshotByGroupIdWithReferencedControllerServices(groupId);
+        final RegisteredFlowSnapshot versionedFlowSnapshot = serviceFacadeSpy.getCurrentFlowSnapshotByGroupIdWithReferencedControllerServices(groupId);
 
         assertEquals(1, versionedFlowSnapshot.getFlowContents().getControllerServices().size());
         assertEquals("test", versionedFlowSnapshot.getFlowContents().getControllerServices().iterator().next().getIdentifier());

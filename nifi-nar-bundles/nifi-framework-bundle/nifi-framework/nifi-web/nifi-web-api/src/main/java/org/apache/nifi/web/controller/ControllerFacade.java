@@ -85,6 +85,7 @@ import org.apache.nifi.provenance.search.QuerySubmission;
 import org.apache.nifi.provenance.search.SearchTerm;
 import org.apache.nifi.provenance.search.SearchTerms;
 import org.apache.nifi.provenance.search.SearchableField;
+import org.apache.nifi.registry.flow.FlowRegistryClient;
 import org.apache.nifi.remote.PublicPort;
 import org.apache.nifi.remote.RemoteGroupPort;
 import org.apache.nifi.reporting.BulletinRepository;
@@ -570,6 +571,14 @@ public class ControllerFacade implements Authorizable {
         return dtoFactory.fromDocumentedTypes(getExtensionManager().getExtensions(ReportingTask.class), bundleGroupFilter, bundleArtifactFilter, typeFilter);
     }
 
+    /**
+     * Gets the FlowRegistryClient types that this controller supports.
+     *
+     * @return the FlowRegistryClient types that this controller supports
+     */
+    public Set<DocumentedTypeDTO> getFlowRegistryTypes() {
+        return dtoFactory.fromDocumentedTypes(getExtensionManager().getExtensions(FlowRegistryClient.class), null, null, null);
+    }
 
     /**
      * Gets the RuntimeManifest for this overall NiFi instance.
