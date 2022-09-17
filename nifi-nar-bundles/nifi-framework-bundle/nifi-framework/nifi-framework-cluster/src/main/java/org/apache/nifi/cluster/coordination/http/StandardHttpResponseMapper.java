@@ -36,6 +36,7 @@ import org.apache.nifi.cluster.coordination.http.endpoints.DropAllFlowFilesReque
 import org.apache.nifi.cluster.coordination.http.endpoints.DropRequestEndpointMerger;
 import org.apache.nifi.cluster.coordination.http.endpoints.FlowConfigurationEndpointMerger;
 import org.apache.nifi.cluster.coordination.http.endpoints.FlowMerger;
+import org.apache.nifi.cluster.coordination.http.endpoints.FlowRepositoryClientTypesEndpointMerger;
 import org.apache.nifi.cluster.coordination.http.endpoints.FlowSnippetEndpointMerger;
 import org.apache.nifi.cluster.coordination.http.endpoints.FunnelEndpointMerger;
 import org.apache.nifi.cluster.coordination.http.endpoints.FunnelsEndpointMerger;
@@ -181,6 +182,8 @@ public class StandardHttpResponseMapper implements HttpResponseMapper {
         endpointMergers.add(new ParameterProviderEndpointMerger());
         endpointMergers.add(new ParameterProvidersEndpointMerger());
         endpointMergers.add(new ParameterProviderFetchRequestsEndpointMerger());
+        endpointMergers.add(new FlowRepositoryClientTypesEndpointMerger());
+
     }
 
     @Override

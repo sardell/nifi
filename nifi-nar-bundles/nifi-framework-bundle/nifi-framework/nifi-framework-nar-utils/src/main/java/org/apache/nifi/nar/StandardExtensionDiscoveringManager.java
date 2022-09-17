@@ -349,7 +349,7 @@ public class StandardExtensionDiscoveringManager implements ExtensionDiscovering
      */
     private static boolean multipleVersionsAllowed(Class<?> type) {
         return Processor.class.isAssignableFrom(type) || ControllerService.class.isAssignableFrom(type) || ReportingTask.class.isAssignableFrom(type)
-                || ParameterProvider.class.isAssignableFrom(type);
+                || ParameterProvider.class.isAssignableFrom(type) || FlowRegistryClient.class.isAssignableFrom(type);
     }
 
     protected boolean isInstanceClassLoaderRequired(final String classType, final Bundle bundle) {

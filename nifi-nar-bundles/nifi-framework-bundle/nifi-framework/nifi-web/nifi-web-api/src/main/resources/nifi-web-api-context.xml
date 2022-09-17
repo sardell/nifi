@@ -364,7 +364,7 @@
         <property name="heartbeatMonitor" ref="heartbeatMonitor" />
         <property name="bulletinRepository" ref="bulletinRepository"/>
         <property name="leaderElectionManager" ref="leaderElectionManager" />
-        <property name="registryDAO" ref="flowRegistryDAO" />
+        <property name="flowRegistryDAO" ref="flowRegistryDAO" />
         <property name="parameterContextDAO" ref="parameterContextDAO" />
     </bean>
 

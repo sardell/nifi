@@ -331,6 +331,7 @@ public class XmlFlowSynchronizer implements FlowSynchronizer {
         flowManager.getAllControllerServices().stream().filter(ComponentNode::isExtensionMissing).forEach(cs -> missingComponents.add(cs.getIdentifier()));
         flowManager.getAllReportingTasks().stream().filter(ComponentNode::isExtensionMissing).forEach(r -> missingComponents.add(r.getIdentifier()));
         flowManager.getAllParameterProviders().stream().filter(ComponentNode::isExtensionMissing).forEach(r -> missingComponents.add(r.getIdentifier()));
+        flowManager.getAllFlowRegistryClients().stream().filter(ComponentNode::isExtensionMissing).forEach(c -> missingComponents.add(c.getIdentifier()));
         root.findAllProcessors().stream().filter(AbstractComponentNode::isExtensionMissing).forEach(p -> missingComponents.add(p.getIdentifier()));
 
         logger.trace("Exporting snippets from controller");

@@ -25,7 +25,7 @@ import java.util.Set;
  * A serialized representation of this class can be placed in the entity body of a response to the API. This particular entity holds a reference to a list of flow registry client types.
  */
 @XmlRootElement(name = "flowRegistryClientTypesEntity")
-public class FlowRegistryClientTypesEntity {
+public class FlowRegistryClientTypesEntity extends Entity {
 
     private Set<DocumentedTypeDTO> flowRegistryClientTypes;
 
