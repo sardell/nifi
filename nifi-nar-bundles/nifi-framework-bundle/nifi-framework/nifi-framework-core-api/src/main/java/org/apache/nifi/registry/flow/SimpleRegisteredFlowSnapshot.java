@@ -16,7 +16,9 @@
  */
 package org.apache.nifi.registry.flow;
 
+import io.swagger.annotations.ApiModelProperty;
 import org.apache.nifi.flow.ExternalControllerServiceReference;
+import org.apache.nifi.flow.ParameterProviderReference;
 import org.apache.nifi.flow.VersionedParameterContext;
 import org.apache.nifi.flow.VersionedProcessGroup;
 
@@ -30,6 +32,7 @@ public class SimpleRegisteredFlowSnapshot implements RegisteredFlowSnapshot {
     private Map<String, ExternalControllerServiceReference> externalControllerServices;
     private Map<String, VersionedParameterContext> parameterContexts;
     private String flowEncodingVersion;
+    private Map<String, ParameterProviderReference> parameterProviders;
 
     @Override
     public RegisteredFlowSnapshotMetadata getSnapshotMetadata() {
@@ -100,5 +103,14 @@ public class SimpleRegisteredFlowSnapshot implements RegisteredFlowSnapshot {
 
     public void setFlowEncodingVersion(String flowEncodingVersion) {
         this.flowEncodingVersion = flowEncodingVersion;
+    }
+
+    @Override
+    public Map<String, ParameterProviderReference> getParameterProviders() {
+        return parameterProviders;
+    }
+
+    public void setParameterProviders(final Map<String, ParameterProviderReference> parameterProviders) {
+        this.parameterProviders = parameterProviders;
     }
 }

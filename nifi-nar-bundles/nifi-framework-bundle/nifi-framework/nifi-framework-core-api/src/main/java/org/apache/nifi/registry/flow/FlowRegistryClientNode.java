@@ -18,6 +18,7 @@ package org.apache.nifi.registry.flow;
 
 import org.apache.nifi.controller.ComponentNode;
 import org.apache.nifi.flow.ExternalControllerServiceReference;
+import org.apache.nifi.flow.ParameterProviderReference;
 import org.apache.nifi.flow.VersionedParameterContext;
 import org.apache.nifi.flow.VersionedProcessGroup;
 
@@ -42,13 +43,13 @@ public interface FlowRegistryClientNode extends ComponentNode {
 
     RegisteredFlowSnapshot getFlowContents(FlowRegistryClientUserContext context, String bucketId, String flowId, int version, boolean fetchRemoteFlows) throws FlowRegistryException, IOException;
     RegisteredFlowSnapshot registerFlowSnapshot(
-        FlowRegistryClientUserContext context,
-        RegisteredFlow flow,
-        VersionedProcessGroup snapshot,
-        Map<String, ExternalControllerServiceReference> externalControllerServices,
-        Map<String, VersionedParameterContext> parameterContexts,
-        String comments,
-        int expectedVersion
+            FlowRegistryClientUserContext context,
+            RegisteredFlow flow,
+            VersionedProcessGroup snapshot,
+            Map<String, ExternalControllerServiceReference> externalControllerServices,
+            Map<String, VersionedParameterContext> parameterContexts,
+            Map<String, ParameterProviderReference> parameterProviderReferences, String comments,
+            int expectedVersion
     ) throws FlowRegistryException, IOException;
 
     Set<RegisteredFlowSnapshotMetadata> getFlowVersions(FlowRegistryClientUserContext context, String bucketId, String flowId) throws FlowRegistryException, IOException;

@@ -159,6 +159,7 @@ final class NifiRegistryUtil {
         result.setExternalControllerServices(flowSnapshot.getExternalControllerServices());
         result.setParameterContexts(flowSnapshot.getParameterContexts());
         result.setFlowEncodingVersion(flowSnapshot.getFlowEncodingVersion());
+        result.setParameterProviders(flowSnapshot.getParameterProviders());
         return result;
     }
 
@@ -171,6 +172,7 @@ final class NifiRegistryUtil {
         result.setExternalControllerServices(flowSnapshot.getExternalControllerServices());
         result.setParameterContexts(flowSnapshot.getParameterContexts());
         result.setFlowEncodingVersion(flowSnapshot.getFlowEncodingVersion());
+        result.setParameterProviders(flowSnapshot.getParameterProviders());
         return result;
     }
 }

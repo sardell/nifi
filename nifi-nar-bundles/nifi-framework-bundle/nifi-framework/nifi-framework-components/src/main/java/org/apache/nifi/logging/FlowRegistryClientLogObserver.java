@@ -42,4 +42,9 @@ public class FlowRegistryClientLogObserver implements LogObserver {
                 clientNode.getName(), "Log Message", bulletinLevel, message.getMessage());
         bulletinRepository.addBulletin(bulletin);
     }
+
+    @Override
+    public String getComponentDescription() {
+        return clientNode.toString();
+    }
 }

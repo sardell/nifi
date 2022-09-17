@@ -36,6 +36,7 @@ import org.apache.nifi.controller.ValidationContextFactory;
 import org.apache.nifi.controller.flow.FlowManager;
 import org.apache.nifi.controller.service.ControllerServiceProvider;
 import org.apache.nifi.flow.ExternalControllerServiceReference;
+import org.apache.nifi.flow.ParameterProviderReference;
 import org.apache.nifi.flow.VersionedFlowCoordinates;
 import org.apache.nifi.flow.VersionedParameterContext;
 import org.apache.nifi.flow.VersionedProcessGroup;
@@ -237,10 +238,11 @@ public final class StandardFlowRegistryClientNode extends AbstractComponentNode 
             final VersionedProcessGroup snapshot,
             final Map<String, ExternalControllerServiceReference> externalControllerServices,
             final Map<String, VersionedParameterContext> parameterContexts,
+            final Map<String, ParameterProviderReference> parameterProviderReferences,
             final String comments,
             final int expectedVersion) throws FlowRegistryException, IOException {
 
-        final SimpleRegisteredFlowSnapshot registeredFlowSnapshot = createRegisteredFlowSnapshot(context, flow, snapshot, externalControllerServices, parameterContexts, comments, expectedVersion);
+        final SimpleRegisteredFlowSnapshot registeredFlowSnapshot = createRegisteredFlowSnapshot(context, flow, snapshot, externalControllerServices, parameterContexts, parameterProviderReferences, comments, expectedVersion);
         return execute(() -> client.getComponent().registerFlowSnapshot(getConfigurationContext(context), registeredFlowSnapshot));
     }
 
@@ -323,6 +325,7 @@ public final class StandardFlowRegistryClientNode extends AbstractComponentNode 
             final VersionedProcessGroup snapshot,
             final Map<String, ExternalControllerServiceReference> externalControllerServices,
             final Map<String, VersionedParameterContext> parameterContexts,
+            final Map<String, ParameterProviderReference> parameterProviderReferences,
             final String comments,
             final int expectedVersion) {
         final SimpleRegisteredFlowSnapshotMetadata metadata = new SimpleRegisteredFlowSnapshotMetadata();
@@ -339,6 +342,7 @@ public final class StandardFlowRegistryClientNode extends AbstractComponentNode 
         registeredFlowSnapshot.setParameterContexts(parameterContexts);
         registeredFlowSnapshot.setFlowEncodingVersion(FlowRegistryUtil.FLOW_ENCODING_VERSION);
         registeredFlowSnapshot.setSnapshotMetadata(metadata);
+        registeredFlowSnapshot.setParameterProviders(parameterProviderReferences);
         return registeredFlowSnapshot;
     }
 

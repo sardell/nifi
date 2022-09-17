@@ -3987,7 +3987,7 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
     }
 
     @Override
-    public void resolveParameterProviders(final VersionedFlowSnapshot versionedFlowSnapshot, final NiFiUser user) {
+    public void resolveParameterProviders(final RegisteredFlowSnapshot versionedFlowSnapshot, final NiFiUser user) {
         final Map<String, ParameterProviderReference> parameterProviderReferences = versionedFlowSnapshot.getParameterProviders();
         if (parameterProviderReferences == null || parameterProviderReferences.isEmpty()
                 || versionedFlowSnapshot.getParameterContexts() == null || versionedFlowSnapshot.getParameterContexts().isEmpty()) {
@@ -5856,6 +5856,9 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
                     break;
                 case ReportingTask:
                     authorizable = authorizableLookup.getReportingTask(sourceId).getAuthorizable();
+                    break;
+                case FlowRegistryClient:
+                    authorizable = authorizableLookup.getFlowRegistryClient(sourceId).getAuthorizable();
                     break;
                 case ControllerService:
                     authorizable = authorizableLookup.getControllerService(sourceId).getAuthorizable();
