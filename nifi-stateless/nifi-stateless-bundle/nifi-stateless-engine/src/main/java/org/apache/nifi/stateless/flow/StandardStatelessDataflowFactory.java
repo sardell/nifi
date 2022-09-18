@@ -49,6 +49,7 @@ import org.apache.nifi.parameter.StandardParameterContextManager;
 import org.apache.nifi.provenance.IdentifierLookup;
 import org.apache.nifi.provenance.ProvenanceRepository;
 import org.apache.nifi.registry.VariableRegistry;
+import org.apache.nifi.registry.flow.InMemoryFlowRegistry;
 import org.apache.nifi.reporting.Bulletin;
 import org.apache.nifi.reporting.BulletinRepository;
 import org.apache.nifi.stateless.bootstrap.ExtensionDiscovery;
@@ -107,10 +108,10 @@ public class StandardStatelessDataflowFactory implements StatelessDataflowFactor
                 throw new IOException("Working Directory " + narExpansionDirectory + " does not exist and could not be created");
             }
 
-            //final InMemoryFlowRegistry flowRegistry = new InMemoryFlowRegistry();
-            //flowRegistry.addFlowSnapshot(dataflowDefinition.getVersionedExternalFlow());
-            //final FlowRegistryManager flowRegistryManager = new StandardFlowRegistryManager();
-            // TODO-2803 Instead of using standard flow registry manager, there will be an InMemoryRegistryManager
+            // TODO-2803
+            final InMemoryFlowRegistry flowRegistry = new InMemoryFlowRegistry();
+//            flowRegistry.registerFlowSnapshot(dataflowDefinition.getVersionedExternalFlow());
+//            final FlowFileEventRepositoryRegistryManager flowRegistryManager = new StandardFlowRegistryManager();
 //            flowRegistryManager.addFlowRegistry(flowRegistry); - or set props and extensionManager
 
             final NarClassLoaders narClassLoaders = new NarClassLoaders();
