@@ -65,12 +65,12 @@ public class RegistryClientsResult extends AbstractWritableResult<FlowRegistryCl
                 .column("#", 3, 3, false)
                 .column("Name", 20, 36, true)
                 .column("Id", 36, 36, false)
-//                .column("Uri", 3, Integer.MAX_VALUE, false)
+                .column("Uri", 3, Integer.MAX_VALUE, false)
                 .build();
 
         for (int i = 0; i < registries.size(); i++) {
             FlowRegistryClientDTO r = registries.get(i);
-//            table.addRow("" + (i+1), r.getName(), r.getId(), r.getUri());
+            table.addRow("" + (i+1), r.getName(), r.getId(), r.getUri());
         }
 
         final TableWriter tableWriter = new DynamicTableWriter();

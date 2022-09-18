@@ -17,7 +17,6 @@
 package org.apache.nifi.toolkit.cli.impl.result.registry;
 
 import org.apache.commons.lang3.Validate;
-import org.apache.nifi.registry.flow.RegisteredFlowSnapshotMetadata;
 import org.apache.nifi.registry.flow.VersionedFlowSnapshotMetadata;
 import org.apache.nifi.toolkit.cli.api.ResultType;
 import org.apache.nifi.toolkit.cli.impl.result.AbstractWritableResult;
