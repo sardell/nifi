@@ -16,7 +16,6 @@
  */
 package org.apache.nifi.registry.flow;
 
-import io.swagger.annotations.ApiModelProperty;
 import org.apache.nifi.flow.ExternalControllerServiceReference;
 import org.apache.nifi.flow.ParameterProviderReference;
 import org.apache.nifi.flow.VersionedParameterContext;

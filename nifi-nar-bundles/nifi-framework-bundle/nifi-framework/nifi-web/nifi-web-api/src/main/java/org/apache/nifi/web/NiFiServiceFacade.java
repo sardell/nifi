@@ -1587,7 +1587,6 @@ public interface NiFiServiceFacade {
      * @param flow the flow where the snapshot should be persisted
      * @param snapshot the Snapshot to persist
      * @param parameterContexts a map of the Parameter Contexts to include keyed by name
-     * @param parameterContexts a map of the Parameter Contexts to include keyed by name
      * @param parameterProviderReferences a map of the Parameter Providers referenced by any Parameter Context in the snapshot, keyed by identifier
      * @param externalControllerServiceReferences a mapping of controller service id to ExternalControllerServiceReference for any Controller Service that is referenced in the flow but not included
      * in the VersionedProcessGroup

@@ -242,7 +242,8 @@ public final class StandardFlowRegistryClientNode extends AbstractComponentNode 
             final String comments,
             final int expectedVersion) throws FlowRegistryException, IOException {
 
-        final SimpleRegisteredFlowSnapshot registeredFlowSnapshot = createRegisteredFlowSnapshot(context, flow, snapshot, externalControllerServices, parameterContexts, parameterProviderReferences, comments, expectedVersion);
+        final SimpleRegisteredFlowSnapshot registeredFlowSnapshot = createRegisteredFlowSnapshot(
+                context, flow, snapshot, externalControllerServices, parameterContexts, parameterProviderReferences, comments, expectedVersion);
         return execute(() -> client.getComponent().registerFlowSnapshot(getConfigurationContext(context), registeredFlowSnapshot));
     }
 

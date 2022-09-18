@@ -56,7 +56,7 @@ public class InMemoryFlowRegistry {
         return description;
     }
 
-//    @Override
+//    @OverrideStandardNiFiServiceFacadeTest
     public void setDescription(final String description) {
         this.description = description;
     }
