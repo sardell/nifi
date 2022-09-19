@@ -252,6 +252,20 @@ public class VersionedFlowSynchronizer implements FlowSynchronizer {
             }
         }
 
+        if (dataflow.getRegistries() == null) {
+            dataflow.setRegistries(new ArrayList<>());
+        }
+        for (final VersionedFlowRegistryClient registry : dataflow.getRegistries()) {
+            if (missingComponentIds.contains(registry.getInstanceIdentifier())) {
+                continue;
+            }
+
+            final Bundle compatibleBundle = getCompatibleBundle(registry.getBundle(), extensionManager, registry.getType());
+            if (compatibleBundle != null) {
+                registry.setBundle(compatibleBundle);
+            }
+        }
+
         if (dataflow.getParameterProviders() == null) {
             dataflow.setParameterProviders(new ArrayList<>());
         }

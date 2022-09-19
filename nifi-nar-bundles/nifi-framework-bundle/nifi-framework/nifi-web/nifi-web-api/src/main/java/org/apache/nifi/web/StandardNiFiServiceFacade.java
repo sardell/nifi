@@ -6469,7 +6469,7 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
         this.leaderElectionManager = leaderElectionManager;
     }
 
-    public void setRegistryDAO(FlowRegistryDAO flowRegistryDao) {
+    public void setFlowRegistryDAO(FlowRegistryDAO flowRegistryDao) {
         this.flowRegistryDAO = flowRegistryDao;
     }
 }
