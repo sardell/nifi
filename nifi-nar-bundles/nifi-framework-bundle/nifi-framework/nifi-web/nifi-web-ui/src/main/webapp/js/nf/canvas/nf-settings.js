@@ -1777,7 +1777,7 @@
             var regTypeOptions = [];
             response.flowRegistryClientTypes.forEach((type) => {
                 regTypeOptions.push({
-                    text: type.type,
+                    text: nfCommon.substringAfterLast(type.type, '.'),
                     value: type.type,
                     description: type.description || ''
                 })
