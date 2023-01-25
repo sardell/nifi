@@ -420,7 +420,7 @@ public interface FlowManager extends ParameterProviderLookup {
 
     FlowAnalysisRuleNode createFlowAnalysisRule(String type, String id, BundleCoordinate bundleCoordinate, boolean firstTimeAdded);
 
-    FlowAnalysisRuleNode createFlowAnalysisRule(String type, String id, BundleCoordinate bundleCoordinate, Set<URL> additionalUrls, boolean firstTimeAdded, boolean register);
+    FlowAnalysisRuleNode createFlowAnalysisRule(String type, String id, BundleCoordinate bundleCoordinate, Set<URL> additionalUrls, boolean firstTimeAdded, boolean register, String classloaderIsolationKey);
 
     FlowAnalysisRuleNode getFlowAnalysisRuleNode(String taskId);
 

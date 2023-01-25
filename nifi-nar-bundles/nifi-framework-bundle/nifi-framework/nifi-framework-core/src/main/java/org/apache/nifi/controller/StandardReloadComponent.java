@@ -236,16 +236,18 @@ public class StandardReloadComponent implements ReloadComponent {
         // save the instance class loader to use it for calling OnRemoved on the existing processor
         final ClassLoader existingInstanceClassLoader = extensionManager.getInstanceClassLoader(id);
 
-        // set firstTimeAdded to true so lifecycle annotations get fired, but don't register this node
-        // attempt the creation to make sure it works before firing the OnRemoved methods below
-        final FlowAnalysisRuleNode newNode = flowController.getFlowManager().createFlowAnalysisRule(newType, id, bundleCoordinate, additionalUrls, true, false);
-
         // call OnRemoved for the existing flow analysis rule using the previous instance class loader
+        final ConfigurationContext configurationContext = existingNode.getConfigurationContext();
         try (final NarCloseable x = NarCloseable.withComponentNarLoader(existingInstanceClassLoader)) {
-            ReflectionUtils.quietlyInvokeMethodsWithAnnotation(OnRemoved.class, existingNode.getFlowAnalysisRule(), existingNode.getConfigurationContext());
+            ReflectionUtils.quietlyInvokeMethodsWithAnnotation(OnRemoved.class, existingNode.getFlowAnalysisRule(), configurationContext);
         } finally {
             extensionManager.closeURLClassLoader(id, existingInstanceClassLoader);
         }
+
+        // set firstTimeAdded to true so lifecycle annotations get fired, but don't register this node
+        // attempt the creation to make sure it works before firing the OnRemoved methods below
+        final String classloaderIsolationKey = existingNode.getClassLoaderIsolationKey(configurationContext);
+        final FlowAnalysisRuleNode newNode = flowController.getFlowManager().createFlowAnalysisRule(newType, id, bundleCoordinate, additionalUrls, true, false, classloaderIsolationKey);
 
         // set the new flow analysis rule into the existing node
         final ComponentLog componentLogger = new SimpleProcessLogger(id, existingNode.getFlowAnalysisRule());

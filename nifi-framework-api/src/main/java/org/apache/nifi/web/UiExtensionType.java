@@ -30,7 +30,6 @@ public enum UiExtensionType {
     ControllerServiceConfiguration,
     ReportingTaskConfiguration,
     FlowAnalysisRuleConfiguration,
-    ReportingTaskConfiguration,
     ParameterProviderConfiguration,
     FlowRegistryClientConfiguration,
 }

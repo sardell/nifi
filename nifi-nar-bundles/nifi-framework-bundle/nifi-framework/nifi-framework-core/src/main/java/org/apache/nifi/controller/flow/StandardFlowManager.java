@@ -526,12 +526,13 @@ public class StandardFlowManager extends AbstractFlowManager implements FlowMana
 
     @Override
     public FlowAnalysisRuleNode createFlowAnalysisRule(
-        String type,
-        String id,
-        BundleCoordinate bundleCoordinate,
-        Set<URL> additionalUrls,
-        boolean firstTimeAdded,
-        boolean register
+            String type,
+            String id,
+            BundleCoordinate bundleCoordinate,
+            Set<URL> additionalUrls,
+            boolean firstTimeAdded,
+            boolean register,
+            String classloaderIsolationKey
     ) {
         if (type == null || id == null || bundleCoordinate == null) {
             throw new NullPointerException();
@@ -558,6 +559,7 @@ public class StandardFlowManager extends AbstractFlowManager implements FlowMana
             .extensionManager(extensionManager)
             .flowAnalysisContext(getFlowAnalysisContext())
             .flowAnalyzer(flowAnalyzer)
+            .classloaderIsolationKey(classloaderIsolationKey)
             .buildFlowAnalysisRuleNode();
 
         LogRepositoryFactory.getRepository(flowAnalysisNode.getIdentifier()).setLogger(flowAnalysisNode.getLogger());

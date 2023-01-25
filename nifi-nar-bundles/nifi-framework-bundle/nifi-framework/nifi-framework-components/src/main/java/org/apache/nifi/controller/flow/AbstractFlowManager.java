@@ -49,7 +49,6 @@ import org.apache.nifi.registry.flow.FlowRegistryClientNode;
 import org.apache.nifi.remote.PublicPort;
 import org.apache.nifi.remote.RemoteGroupPort;
 import org.apache.nifi.util.ReflectionUtils;
-import org.apache.nifi.web.api.entity.ParameterContextReferenceEntity;
 import org.apache.nifi.validation.FlowAnalysisContext;
 
 import java.util.ArrayList;
@@ -462,7 +461,7 @@ public abstract class AbstractFlowManager implements FlowManager {
 
     @Override
     public FlowAnalysisRuleNode createFlowAnalysisRule(final String type, final String id, final BundleCoordinate bundleCoordinate, final boolean firstTimeAdded) {
-        return createFlowAnalysisRule(type, id, bundleCoordinate, Collections.emptySet(), firstTimeAdded, true);
+        return createFlowAnalysisRule(type, id, bundleCoordinate, Collections.emptySet(), firstTimeAdded, true, null);
     }
 
     @Override

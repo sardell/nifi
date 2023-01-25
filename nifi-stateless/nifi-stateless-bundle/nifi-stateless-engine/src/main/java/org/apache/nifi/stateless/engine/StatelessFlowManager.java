@@ -444,7 +444,7 @@ public class StatelessFlowManager extends AbstractFlowManager implements FlowMan
     }
 
     @Override
-    public FlowAnalysisRuleNode createFlowAnalysisRule(String type, String id, BundleCoordinate bundleCoordinate, Set<URL> additionalUrls, boolean firstTimeAdded, boolean register) {
+    public FlowAnalysisRuleNode createFlowAnalysisRule(String type, String id, BundleCoordinate bundleCoordinate, Set<URL> additionalUrls, boolean firstTimeAdded, boolean register, String classloaderIsolationKey) {
         return null;
     }
 }

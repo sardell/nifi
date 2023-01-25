@@ -66,7 +66,8 @@ public abstract class AbstractFlowAnalysisIT extends FrameworkIntegrationTest {
             SystemBundle.SYSTEM_BUNDLE_COORDINATE,
             Collections.emptySet(),
             true,
-            true
+            true,
+            null
         );
 
         processGroup.addProcessor(processorNode);
@@ -78,7 +79,7 @@ public abstract class AbstractFlowAnalysisIT extends FrameworkIntegrationTest {
         return mapper.mapProcessGroup(
             processGroup,
             getFlowController().getControllerServiceProvider(),
-            getFlowController().getFlowRegistryClient(),
+            getFlowController().getFlowManager(),
             true
         );
     }
@@ -98,7 +99,8 @@ public abstract class AbstractFlowAnalysisIT extends FrameworkIntegrationTest {
             SystemBundle.SYSTEM_BUNDLE_COORDINATE,
             Collections.emptySet(),
             true,
-            true
+            true,
+            null
         );
 
         ((DelegateFlowAnalysisRule) flowAnalysisRuleNode.getFlowAnalysisRule()).setDelegate(flowAnalysisRule);

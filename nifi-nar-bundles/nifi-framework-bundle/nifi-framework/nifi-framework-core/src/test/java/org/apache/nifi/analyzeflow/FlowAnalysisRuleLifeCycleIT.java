@@ -163,7 +163,8 @@ public class FlowAnalysisRuleLifeCycleIT extends AbstractFlowAnalysisIT {
             SystemBundle.SYSTEM_BUNDLE_COORDINATE,
             Collections.emptySet(),
             true,
-            true
+            true,
+            null
         );
         getFlowController().getFlowManager().addRootControllerService(service);
         service.resetValidationState();

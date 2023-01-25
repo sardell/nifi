@@ -222,8 +222,15 @@ public class StandardControllerServiceProvider implements ControllerServiceProvi
         }
         for (final FlowAnalysisRuleNode node : flowAnalysisRuleNodes) {
             if (node.isEnabled()) {
-                node.disable();
-                final Future<Void> future = CompletableFuture.completedFuture(null);
+                final CompletableFuture<Void> future = new CompletableFuture<>();
+                processScheduler.submitFrameworkTask(() -> {
+                    try {
+                        node.disable();
+                        future.complete(null);
+                    } catch (final Exception e) {
+                        future.completeExceptionally(e);
+                    }
+                });
                 updated.put(node, future);
             }
         }

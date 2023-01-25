@@ -22,6 +22,7 @@ import org.apache.nifi.authorization.Resource;
 import org.apache.nifi.authorization.resource.Authorizable;
 import org.apache.nifi.authorization.resource.ResourceFactory;
 import org.apache.nifi.authorization.resource.ResourceType;
+import org.apache.nifi.components.ValidationResult;
 import org.apache.nifi.components.validation.ValidationTrigger;
 import org.apache.nifi.controller.FlowController;
 import org.apache.nifi.controller.LoggableComponent;
@@ -35,6 +36,9 @@ import org.apache.nifi.registry.ComponentVariableRegistry;
 import org.apache.nifi.flowanalysis.FlowAnalysisRuleContext;
 import org.apache.nifi.flowanalysis.FlowAnalysisRule;
 import org.apache.nifi.validation.FlowAnalysisContext;
+
+import java.util.Collections;
+import java.util.List;
 
 public class StandardFlowAnalysisRuleNode extends AbstractFlowAnalysisRuleNode implements FlowAnalysisRuleNode {
 
@@ -93,6 +97,11 @@ public class StandardFlowAnalysisRuleNode extends AbstractFlowAnalysisRuleNode i
             ParameterLookup.EMPTY,
             getVariableRegistry()
         );
+    }
+
+    @Override
+    protected List<ValidationResult> validateConfig() {
+        return Collections.emptyList();
     }
 
     @Override

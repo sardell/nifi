@@ -601,6 +601,9 @@ class StandardAuthorizableLookup implements AuthorizableLookup {
             case ReportingTask:
                 authorizable = getReportingTask(componentId).getAuthorizable();
                 break;
+            case FlowAnalysisRule:
+                authorizable = getFlowAnalysisRule(componentId).getAuthorizable();
+                break;
             case Template:
                 authorizable = getTemplate(componentId);
                 break;

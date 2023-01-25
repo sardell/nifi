@@ -21,6 +21,7 @@ import io.swagger.annotations.ApiModelProperty;
 import javax.xml.bind.annotation.XmlType;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 
 @XmlType(name = "flowAnalysisRule")
 public class FlowAnalysisRuleDTO extends ComponentDTO {
@@ -38,11 +39,13 @@ public class FlowAnalysisRuleDTO extends ComponentDTO {
     private Boolean deprecated;
     private Boolean isExtensionMissing;
     private Boolean multipleVersionsAvailable;
+    private Boolean supportsSensitiveDynamicProperties;
 
     private String ruleType;
 
     private Map<String, String> properties;
     private Map<String, PropertyDescriptorDTO> descriptors;
+    private Set<String> sensitiveDynamicPropertyNames;
 
     private String customUiUrl;
     private String annotationData;
@@ -93,12 +96,12 @@ public class FlowAnalysisRuleDTO extends ComponentDTO {
     }
 
     /**
-     * The details of the artifact that bundled this processor type.
+     * The details of the artifact that bundled this flow analysis rule type.
      *
      * @return The bundle details
      */
     @ApiModelProperty(
-            value = "The details of the artifact that bundled this processor type."
+            value = "The details of the artifact that bundled this flow analysis rule type."
     )
     public BundleDTO getBundle() {
         return bundle;
@@ -146,7 +149,7 @@ public class FlowAnalysisRuleDTO extends ComponentDTO {
     }
 
     public void setDeprecated(Boolean deprecated) {
-        this.deprecated= deprecated;
+        this.deprecated = deprecated;
     }
 
     /**
@@ -178,11 +181,25 @@ public class FlowAnalysisRuleDTO extends ComponentDTO {
     }
 
     /**
+     * @return whether this flow analysis rule supports sensitive dynamic properties
+     */
+    @ApiModelProperty(
+            value = "Whether the flow analysis rule supports sensitive dynamic properties."
+    )
+    public Boolean getSupportsSensitiveDynamicProperties() {
+        return supportsSensitiveDynamicProperties;
+    }
+
+    public void setSupportsSensitiveDynamicProperties(final Boolean supportsSensitiveDynamicProperties) {
+        this.supportsSensitiveDynamicProperties = supportsSensitiveDynamicProperties;
+    }
+
+    /**
      * @return current scheduling state of the flow analysis rule
      */
     @ApiModelProperty(
-            value = "The state of the flow analysis rule.",
-            allowableValues = "ENABLED, DISABLED"
+            value = "The state of the reporting task.",
+            allowableValues = "RUNNING, STOPPED, DISABLED"
     )
     public String getState() {
         return state;
@@ -235,6 +252,20 @@ public class FlowAnalysisRuleDTO extends ComponentDTO {
     }
 
     /**
+     * @return Set of sensitive dynamic property names
+     */
+    @ApiModelProperty(
+            value = "Set of sensitive dynamic property names"
+    )
+    public Set<String> getSensitiveDynamicPropertyNames() {
+        return sensitiveDynamicPropertyNames;
+    }
+
+    public void setSensitiveDynamicPropertyNames(final Set<String> sensitiveDynamicPropertyNames) {
+        this.sensitiveDynamicPropertyNames = sensitiveDynamicPropertyNames;
+    }
+
+    /**
      * @return the URL for this flow analysis rule custom configuration UI if applicable. Null otherwise
      */
     @ApiModelProperty(
@@ -279,8 +310,8 @@ public class FlowAnalysisRuleDTO extends ComponentDTO {
         this.validationErrors = validationErrors;
     }
 
-    @ApiModelProperty(value = "Indicates whether the Processor is valid, invalid, or still in the process of validating (i.e., it is unknown whether or not the Processor is valid)",
-        readOnly = true,
+    @ApiModelProperty(value = "Indicates whether the Flow Analysis Rule is valid, invalid, or still in the process of validating (i.e., it is unknown whether or not the Flow Analysis Rule is valid)",
+        accessMode = ApiModelProperty.AccessMode.READ_ONLY,
         allowableValues = VALID + ", " + INVALID + ", " + VALIDATING)
     public String getValidationStatus() {
         return validationStatus;

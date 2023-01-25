@@ -140,7 +140,7 @@ public abstract class AbstractFlowAnalysisRuleNode extends AbstractComponentNode
         if (isEnabled()) {
             throw new IllegalStateException("Cannot reload Flow Analysis Rule while it is enabled");
         }
-        String additionalResourcesFingerprint = ClassLoaderUtils.generateAdditionalUrlsFingerprint(additionalUrls);
+        String additionalResourcesFingerprint = ClassLoaderUtils.generateAdditionalUrlsFingerprint(additionalUrls, determineClasloaderIsolationKey());
         setAdditionalResourcesFingerprint(additionalResourcesFingerprint);
         getReloadComponent().reload(this, getCanonicalClassName(), getBundleCoordinate(), additionalUrls);
     }

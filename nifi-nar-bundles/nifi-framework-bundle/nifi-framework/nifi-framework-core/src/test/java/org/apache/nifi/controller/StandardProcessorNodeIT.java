@@ -48,6 +48,7 @@ import org.apache.nifi.nar.NarClassLoader;
 import org.apache.nifi.nar.NarCloseable;
 import org.apache.nifi.nar.StandardExtensionDiscoveringManager;
 import org.apache.nifi.nar.SystemBundle;
+import org.apache.nifi.parameter.ParameterContext;
 import org.apache.nifi.processor.AbstractProcessor;
 import org.apache.nifi.processor.ProcessContext;
 import org.apache.nifi.processor.ProcessSession;
@@ -642,105 +643,111 @@ public class StandardProcessorNodeIT {
 
 
     private ValidationContextFactory createValidationContextFactory() {
-        return (properties, annotationData, groupId, componentId, context, validateConnections) -> new ValidationContext() {
+        return new ValidationContextFactory() {
+            @Override
+            public ValidationContext newValidationContext(Map<PropertyDescriptor, PropertyConfiguration> properties, String annotationData, String groupId, String componentId,
+                                                          ParameterContext context, boolean validateConnections) {
+                return new ValidationContext() {
+
+                    @Override
+                    public ControllerServiceLookup getControllerServiceLookup() {
+                        return null;
+                    }
+
+                    @Override
+                    public ValidationContext getControllerServiceValidationContext(ControllerService controllerService) {
+                        return null;
+                    }
+
+                    @Override
+                    public ExpressionLanguageCompiler newExpressionLanguageCompiler() {
+                        return null;
+                    }
+
+                    @Override
+                    public PropertyValue getProperty(PropertyDescriptor property) {
+                        final PropertyConfiguration configuration = properties.get(property);
+                        return newPropertyValue(configuration == null ? null : configuration.getRawValue());
+                    }
+
+                    @Override
+                    public PropertyValue newPropertyValue(String value) {
+                        return new MockPropertyValue(value);
+                    }
+
+                    @Override
+                    public Map<PropertyDescriptor, String> getProperties() {
+                        final Map<PropertyDescriptor, String> propertyMap = new HashMap<>();
+                        properties.forEach((k, v) -> propertyMap.put(k, v == null ? null : v.getRawValue()));
+                        return propertyMap;
+                    }
+
+                    @Override
+                    public Map<String, String> getAllProperties() {
+                        final Map<String, String> propValueMap = new LinkedHashMap<>();
+                        for (final Map.Entry<PropertyDescriptor, String> entry : getProperties().entrySet()) {
+                            propValueMap.put(entry.getKey().getName(), entry.getValue());
+                        }
+                        return propValueMap;
+                    }
+
+                    @Override
+                    public String getAnnotationData() {
+                        return null;
+                    }
+
+                    @Override
+                    public boolean isValidationRequired(ControllerService service) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean isExpressionLanguagePresent(String value) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean isExpressionLanguageSupported(String propertyName) {
+                        return false;
+                    }
+
+                    @Override
+                    public String getProcessGroupIdentifier() {
+                        return groupId;
+                    }
+
+                    @Override
+                    public Collection<String> getReferencedParameters(final String propertyName) {
+                        return Collections.emptyList();
+                    }
+
+                    @Override
+                    public boolean isParameterDefined(final String parameterName) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean isParameterSet(final String parameterName) {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean isDependencySatisfied(final PropertyDescriptor propertyDescriptor, final Function<String, PropertyDescriptor> propertyDescriptorLookup) {
+                        return false;
+                    }
+                };
+            }
 
             @Override
-            public ControllerServiceLookup getControllerServiceLookup() {
+            public FlowAnalysisContext getFlowAnalysisContext() {
                 return null;
             }
 
             @Override
-            public ValidationContext getControllerServiceValidationContext(ControllerService controllerService) {
+            public FlowAnalyzer getFlowAnalyzer() {
                 return null;
-            }
-
-            @Override
-            public ExpressionLanguageCompiler newExpressionLanguageCompiler() {
-                return null;
-            }
-
-            @Override
-            public PropertyValue getProperty(PropertyDescriptor property) {
-                final PropertyConfiguration configuration = properties.get(property);
-                return newPropertyValue(configuration == null ? null : configuration.getRawValue());
-            }
-
-            @Override
-            public PropertyValue newPropertyValue(String value) {
-                return new MockPropertyValue(value);
-            }
-
-            @Override
-            public Map<PropertyDescriptor, String> getProperties() {
-                final Map<PropertyDescriptor, String> propertyMap = new HashMap<>();
-                properties.forEach((k, v) -> propertyMap.put(k, v == null ? null : v.getRawValue()));
-                return propertyMap;
-            }
-
-            @Override
-            public Map<String, String> getAllProperties() {
-                final Map<String,String> propValueMap = new LinkedHashMap<>();
-                for (final Map.Entry<PropertyDescriptor, String> entry : getProperties().entrySet()) {
-                    propValueMap.put(entry.getKey().getName(), entry.getValue());
-                }
-                return propValueMap;
-            }
-
-            @Override
-            public String getAnnotationData() {
-                return null;
-            }
-
-            @Override
-            public boolean isValidationRequired(ControllerService service) {
-                return false;
-            }
-
-            @Override
-            public boolean isExpressionLanguagePresent(String value) {
-                return false;
-            }
-
-            @Override
-            public boolean isExpressionLanguageSupported(String propertyName) {
-                return false;
-            }
-
-            @Override
-            public String getProcessGroupIdentifier() {
-                return groupId;
-            }
-
-            @Override
-            public Collection<String> getReferencedParameters(final String propertyName) {
-                return Collections.emptyList();
-            }
-
-            @Override
-            public boolean isParameterDefined(final String parameterName) {
-                return false;
-            }
-
-            @Override
-            public boolean isParameterSet(final String parameterName) {
-                return false;
-            }
-
-            @Override
-            public boolean isDependencySatisfied(final PropertyDescriptor propertyDescriptor, final Function<String, PropertyDescriptor> propertyDescriptorLookup) {
-                return false;
             }
         };
-
-        @Override
-        public FlowAnalysisContext getFlowAnalysisContext() {
-            return null;
-        }
-
-        @Override
-        public FlowAnalyzer getFlowAnalyzer() {
-            return null;
-        }
     }
 
 

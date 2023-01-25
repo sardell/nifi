@@ -323,7 +323,7 @@ public class StatelessReloadComponent implements ReloadComponent {
 
         // set firstTimeAdded to true so lifecycle annotations get fired, but don't register this node
         // attempt the creation to make sure it works before firing the OnRemoved methods below
-        final FlowAnalysisRuleNode newNode = statelessEngine.getFlowManager().createFlowAnalysisRule(newType, id, bundleCoordinate, additionalUrls, true, false);
+        final FlowAnalysisRuleNode newNode = statelessEngine.getFlowManager().createFlowAnalysisRule(newType, id, bundleCoordinate, additionalUrls, true, false, null);
 
         // call OnRemoved for the existing flow analysis rule using the previous instance class loader
         try (final NarCloseable x = NarCloseable.withComponentNarLoader(existingInstanceClassLoader)) {
