@@ -25,10 +25,9 @@ import org.apache.nifi.action.Operation;
 import org.apache.nifi.action.details.FlowChangePurgeDetails;
 import org.apache.nifi.admin.service.AuditService;
 import org.apache.nifi.attribute.expression.language.Query;
-import org.apache.nifi.authorization.AuthorizableHolder;
-import org.apache.nifi.controller.flowanalysis.FlowAnalysisUtil;
 import org.apache.nifi.authorization.AccessDeniedException;
 import org.apache.nifi.authorization.AccessPolicy;
+import org.apache.nifi.authorization.AuthorizableHolder;
 import org.apache.nifi.authorization.AuthorizableLookup;
 import org.apache.nifi.authorization.AuthorizationRequest;
 import org.apache.nifi.authorization.AuthorizationResult;
@@ -88,6 +87,7 @@ import org.apache.nifi.controller.Snippet;
 import org.apache.nifi.controller.Template;
 import org.apache.nifi.controller.VerifiableControllerService;
 import org.apache.nifi.controller.flow.FlowManager;
+import org.apache.nifi.controller.flowanalysis.FlowAnalysisUtil;
 import org.apache.nifi.controller.label.Label;
 import org.apache.nifi.controller.leader.election.LeaderElectionManager;
 import org.apache.nifi.controller.repository.FlowFileEvent;
@@ -179,8 +179,8 @@ import org.apache.nifi.util.BundleUtils;
 import org.apache.nifi.util.FlowDifferenceFilters;
 import org.apache.nifi.util.NiFiProperties;
 import org.apache.nifi.util.StringUtils;
-import org.apache.nifi.validation.RuleViolationsManager;
 import org.apache.nifi.validation.RuleViolation;
+import org.apache.nifi.validation.RuleViolationsManager;
 import org.apache.nifi.web.api.dto.AccessPolicyDTO;
 import org.apache.nifi.web.api.dto.AccessPolicySummaryDTO;
 import org.apache.nifi.web.api.dto.AffectedComponentDTO;
@@ -2514,10 +2514,10 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
     }
 
     @Override
-    public BulletinEntity createBulletin(final BulletinDTO bulletinDTO, final Boolean canRead){
-        final Bulletin bulletin = BulletinFactory.createBulletin(bulletinDTO.getCategory(),bulletinDTO.getLevel(),bulletinDTO.getMessage());
+    public BulletinEntity createBulletin(final BulletinDTO bulletinDTO, final Boolean canRead) {
+        final Bulletin bulletin = BulletinFactory.createBulletin(bulletinDTO.getCategory(), bulletinDTO.getLevel(), bulletinDTO.getMessage());
         bulletinRepository.addBulletin(bulletin);
-        return entityFactory.createBulletinEntity(dtoFactory.createBulletinDto(bulletin),canRead);
+        return entityFactory.createBulletinEntity(dtoFactory.createBulletinDto(bulletin), canRead);
     }
 
     @Override
@@ -3649,7 +3649,7 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
                             parameterEntity = dtoFactory.createParameterEntity(parameterContext, parameter, revisionManager, parameterContextDAO);
                             // Need to unmask in order to actually apply the value
                             if (parameterEntity.getParameter() != null && parameterEntity.getParameter().getSensitive() != null
-                                     && parameterEntity.getParameter().getSensitive()) {
+                                    && parameterEntity.getParameter().getSensitive()) {
                                 parameterEntity.getParameter().setValue(parameter.getValue());
                             }
                             updatedParameterEntities.add(parameterEntity);
@@ -3966,7 +3966,6 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
         entity.setRunStatusDetails(runStatusDetailsDto);
         return entity;
     }
-
 
 
     @Override
@@ -5143,6 +5142,7 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
 
         return createParameterProviderReferencingComponentsEntity(references, referencingRevisions);
     }
+
     /**
      * Creates entities for components referencing a ParameterProvider using the specified revisions.
      *
@@ -5400,16 +5400,15 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
     }
 
     /**
-     *
-     * @param registryId        the id of the registry to retrieve the versioned flow from
-     * @param bucketId          the id of the bucket within the registry
-     * @param flowId            the id of the flow within the bucket/registry
-     * @param flowVersion       the version of the flow to retrieve
-     * @param fetchRemoteFlows  indicator to include remote flows when retrieving the flow
+     * @param registryId       the id of the registry to retrieve the versioned flow from
+     * @param bucketId         the id of the bucket within the registry
+     * @param flowId           the id of the flow within the bucket/registry
+     * @param flowVersion      the version of the flow to retrieve
+     * @param fetchRemoteFlows indicator to include remote flows when retrieving the flow
      * @return a VersionedFlowSnapshot from a registry with the given version
      */
     private RegisteredFlowSnapshot getVersionedFlowSnapshot(final String registryId, final String bucketId, final String flowId,
-                                                           final Integer flowVersion, final boolean fetchRemoteFlows) {
+                                                            final Integer flowVersion, final boolean fetchRemoteFlows) {
         final FlowRegistryClientNode flowRegistry = flowRegistryDAO.getFlowRegistryClient(registryId);
         if (flowRegistry == null) {
             throw new ResourceNotFoundException("Could not find any Flow Registry registered with identifier " + registryId);
@@ -5560,7 +5559,7 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
     public RegisteredFlowSnapshot registerVersionedFlowSnapshot(final String registryId, final RegisteredFlow flow, final VersionedProcessGroup snapshot,
                                                                 final Map<String, VersionedParameterContext> parameterContexts,
                                                                 final Map<String, ParameterProviderReference> parameterProviderReferences,
-                                                               final Map<String,ExternalControllerServiceReference> externalControllerServiceReferences, final String comments,
+                                                                final Map<String, ExternalControllerServiceReference> externalControllerServiceReferences, final String comments,
                                                                 final int expectedVersion) {
         final FlowRegistryClientNode registry = flowRegistryDAO.getFlowRegistryClient(registryId);
         if (registry == null) {
@@ -6366,7 +6365,7 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
         // The latest aggregated status history is the last element in the list so we need the last element only
         final StatusHistoryEntity rootGPStatusHistory = getProcessGroupStatusHistory(rootPGId);
         final List<StatusSnapshotDTO> aggregatedStatusHistory = rootGPStatusHistory.getStatusHistory().getAggregateSnapshots();
-        final int lastIndex = aggregatedStatusHistory.size() -1;
+        final int lastIndex = aggregatedStatusHistory.size() - 1;
         final String taskDurationInMillis = ProcessGroupStatusDescriptor.TASK_MILLIS.getField();
         long taskDuration = 0;
         if (!aggregatedStatusHistory.isEmpty()) {
@@ -6380,7 +6379,7 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
 
         final Map<String, Double> aggregatedMetrics = new HashMap<>();
         PrometheusMetricsUtil.aggregatePercentUsed(rootPGStatus, aggregatedMetrics);
-        PrometheusMetricsUtil.createAggregatedNifiMetrics(nifiMetricsRegistry, aggregatedMetrics, instanceId,ROOT_PROCESS_GROUP, rootPGName, rootPGId);
+        PrometheusMetricsUtil.createAggregatedNifiMetrics(nifiMetricsRegistry, aggregatedMetrics, instanceId, ROOT_PROCESS_GROUP, rootPGName, rootPGId);
 
         // Get Connection Status Analytics (predictions, e.g.)
         Set<Connection> connections = controllerFacade.getFlowManager().findAllConnections();
@@ -6410,9 +6409,9 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
         // Create a query to get all bulletins
         final BulletinQueryDTO query = new BulletinQueryDTO();
         BulletinBoardDTO bulletinBoardDTO = getBulletinBoard(query);
-        for(BulletinEntity bulletinEntity : bulletinBoardDTO.getBulletins()) {
+        for (BulletinEntity bulletinEntity : bulletinBoardDTO.getBulletins()) {
             BulletinDTO bulletin = bulletinEntity.getBulletin();
-            if(bulletin != null) {
+            if (bulletin != null) {
                 PrometheusMetricsUtil.createBulletinMetrics(bulletinMetricsRegistry, instanceId,
                         "Bulletin",
                         String.valueOf(bulletin.getId()),
@@ -6620,12 +6619,18 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
     public FlowAnalysisResultEntity createFlowAnalysisResultEntity(Collection<RuleViolation> ruleViolations) {
         FlowAnalysisResultEntity entity = new FlowAnalysisResultEntity();
 
-        Set<FlowAnalysisRuleDTO> flowAnalysisRuleDtos = flowAnalysisRuleDAO.getFlowAnalysisRules().stream()
+        List<FlowAnalysisRuleDTO> flowAnalysisRuleDtos = flowAnalysisRuleDAO.getFlowAnalysisRules().stream()
             .filter(FlowAnalysisRuleNode::isEnabled)
+            .sorted(Comparator.comparing(FlowAnalysisRuleNode::getName))
             .map(flowAnalysisRule -> dtoFactory.createFlowAnalysisRuleDto(flowAnalysisRule))
-            .collect(Collectors.toSet());
+            .collect(Collectors.toList());
 
-        Set<FlowAnalysisRuleViolationDTO> ruleViolationDtos = ruleViolations.stream()
+        List<FlowAnalysisRuleViolationDTO> ruleViolationDtos = ruleViolations.stream()
+            .sorted(Comparator.comparing(RuleViolation::getSubjectId)
+                    .thenComparing(RuleViolation::getScope)
+                    .thenComparing(RuleViolation::getRuleId)
+                    .thenComparing(RuleViolation::getIssueId)
+            )
             .map(ruleViolation -> {
                 FlowAnalysisRuleViolationDTO ruleViolationDto = new FlowAnalysisRuleViolationDTO();
 
@@ -6644,7 +6649,7 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
 
                 return ruleViolationDto;
             })
-            .collect(Collectors.toSet());
+            .collect(Collectors.toList());
 
         entity.setRules(flowAnalysisRuleDtos);
         entity.setRuleViolations(ruleViolationDtos);
@@ -6760,7 +6765,7 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
     /**
      * Create a new flow mapper using a mockable method for testing
      *
-     * @param extensionManager  the extension manager to create the flow mapper with
+     * @param extensionManager the extension manager to create the flow mapper with
      * @return a new NiFiRegistryFlowMapper instance
      */
     protected NiFiRegistryFlowMapper makeNiFiRegistryFlowMapper(final ExtensionManager extensionManager) {

@@ -20,8 +20,8 @@ import org.apache.nifi.web.api.dto.FlowAnalysisRuleDTO;
 import org.apache.nifi.web.api.dto.FlowAnalysisRuleViolationDTO;
 
 import javax.xml.bind.annotation.XmlRootElement;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A serialized representation of this class can be placed in the entity body of a request or response to or from the API.
@@ -32,28 +32,28 @@ public class FlowAnalysisResultEntity extends Entity {
     public FlowAnalysisResultEntity() {
     }
 
-    private Set<FlowAnalysisRuleDTO> rules = new HashSet<>();
-    private Set<FlowAnalysisRuleViolationDTO> ruleViolations = new HashSet<>();
+    private List<FlowAnalysisRuleDTO> rules = new ArrayList<>();
+    private List<FlowAnalysisRuleViolationDTO> ruleViolations = new ArrayList<>();
 
     /**
      * @return set of flow analysis rules that are being serialized
      */
-    public Set<FlowAnalysisRuleDTO> getRules() {
+    public List<FlowAnalysisRuleDTO> getRules() {
         return rules;
     }
 
-    public void setRules(Set<FlowAnalysisRuleDTO> rules) {
+    public void setRules(List<FlowAnalysisRuleDTO> rules) {
         this.rules = rules;
     }
 
     /**
      * @return set of flow analysis results that are being serialized
      */
-    public Set<FlowAnalysisRuleViolationDTO> getRuleViolations() {
+    public List<FlowAnalysisRuleViolationDTO> getRuleViolations() {
         return ruleViolations;
     }
 
-    public void setRuleViolations(Set<FlowAnalysisRuleViolationDTO> ruleViolations) {
+    public void setRuleViolations(List<FlowAnalysisRuleViolationDTO> ruleViolations) {
         this.ruleViolations = ruleViolations;
     }
 }

@@ -22,13 +22,13 @@ import org.apache.nifi.web.api.dto.FlowAnalysisRuleDTO;
 import org.apache.nifi.web.api.dto.FlowAnalysisRuleViolationDTO;
 import org.apache.nifi.web.api.entity.FlowAnalysisResultEntity;
 
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class FlowAnalysisResultEntityMerger {
     public void merge(FlowAnalysisResultEntity clientEntity, Map<NodeIdentifier, FlowAnalysisResultEntity> entityMap) {
-        Set<FlowAnalysisRuleDTO> aggregateRules = clientEntity.getRules();
+        List<FlowAnalysisRuleDTO> aggregateRules = clientEntity.getRules();
         entityMap.values().stream()
                 .map(FlowAnalysisResultEntity::getRules)
                 .forEach(aggregateRules::addAll);
@@ -65,9 +65,9 @@ public class FlowAnalysisResultEntityMerger {
             );
         }
 
-        Set<FlowAnalysisRuleViolationDTO> authorizedViolations = mergedViolations.values().stream()
+        List<FlowAnalysisRuleViolationDTO> authorizedViolations = mergedViolations.values().stream()
                 .filter(violation -> violation.getSubjectPermissionDto().getCanRead())
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
 
         clientEntity.setRuleViolations(authorizedViolations);
     }

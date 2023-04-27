@@ -60,7 +60,7 @@ public interface FlowAnalysisRuleDAO {
     FlowAnalysisRuleNode getFlowAnalysisRule(String flowAnalysisRuleId);
 
     /**
-     * Gets all of the flow analysis rules.
+     * Gets all the flow analysis rules.
      *
      * @return The flow analysis rules
      */
