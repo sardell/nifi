@@ -417,17 +417,6 @@ public interface FlowManager extends ParameterProviderLookup {
     // Flow Analysis
     FlowAnalysisRuleNode createFlowAnalysisRule(
         final String type,
-        final BundleCoordinate bundleCoordinate
-    );
-
-    FlowAnalysisRuleNode createFlowAnalysisRule(
-        final String type,
-        final BundleCoordinate bundleCoordinate,
-        final boolean firstTimeAdded
-    );
-
-    FlowAnalysisRuleNode createFlowAnalysisRule(
-        final String type,
         final String id,
         final BundleCoordinate bundleCoordinate,
         final boolean firstTimeAdded

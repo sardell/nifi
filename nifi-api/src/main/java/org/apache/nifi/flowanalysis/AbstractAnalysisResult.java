@@ -26,7 +26,7 @@ public abstract class AbstractAnalysisResult {
     protected final String message;
     protected final String explanation;
 
-    protected AbstractAnalysisResult(String issueId, String message, String explanation) {
+    protected AbstractAnalysisResult(final String issueId, final String message, final String explanation) {
         this.issueId = issueId;
         this.message = message;
         this.explanation = explanation;

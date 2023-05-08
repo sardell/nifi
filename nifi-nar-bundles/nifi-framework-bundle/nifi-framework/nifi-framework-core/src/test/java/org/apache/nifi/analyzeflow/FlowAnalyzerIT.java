@@ -237,7 +237,7 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
         FlowAnalysisRuleNode flowAnalysisRuleNode = createAndEnableFlowAnalysisRuleNode(new AbstractFlowAnalysisRule() {
             @Override
             public Collection<ComponentAnalysisResult> analyzeComponent(VersionedComponent component, FlowAnalysisRuleContext context) {
-                ComponentAnalysisResult result = ComponentAnalysisResult.newResult(
+                ComponentAnalysisResult result = new ComponentAnalysisResult(
                         issueId,
                         violationMessageHolder.get(),
                         EXPLANATION_PREFIX + violationMessageHolder.get()
@@ -286,7 +286,7 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
                 String violationMessage = violationMessageHolder.get();
 
                 if (violationMessage != null) {
-                    ComponentAnalysisResult result = ComponentAnalysisResult.newResult(
+                    ComponentAnalysisResult result = new ComponentAnalysisResult(
                             issueId,
                             violationMessageHolder.get()
                     );
@@ -458,19 +458,10 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
             public Collection<GroupAnalysisResult> analyzeProcessGroup(VersionedProcessGroup processGroup, FlowAnalysisRuleContext context) {
                 Collection<GroupAnalysisResult> results = new HashSet<>();
 
-                results.add(GroupAnalysisResult.newResultForGroup(
-                        groupViolationIssueId,
-                        groupViolationMessage,
-                        EXPLANATION_PREFIX + groupViolationMessage
-                ));
+                results.add(newResultForGroup(groupViolationIssueId, groupViolationMessage));
 
                 processGroup.getProcessors().stream()
-                        .map(processor -> GroupAnalysisResult.newResultForComponent(
-                                processor,
-                                processorViolationIssueId,
-                                processorViolationMessage,
-                                EXPLANATION_PREFIX + processorViolationMessage
-                        ))
+                        .map(processor -> newResultForComponent(processor, processorViolationIssueId, processorViolationMessage))
                         .forEach(results::add);
 
                 return results;
@@ -524,12 +515,7 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
                 Collection<GroupAnalysisResult> results = new HashSet<>();
 
                 processGroup.getConnections().stream()
-                        .map(connection -> GroupAnalysisResult.newResultForComponent(
-                                connection,
-                                connectionViolationIssueId,
-                                connectionViolationMessage,
-                                EXPLANATION_PREFIX + connectionViolationMessage
-                        ))
+                        .map(connection -> newResultForComponent(connection, connectionViolationIssueId, connectionViolationMessage))
                         .forEach(results::add);
 
                 return results;
@@ -574,12 +560,7 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
                 Collection<GroupAnalysisResult> results = new HashSet<>();
 
                 processGroup.getConnections().stream()
-                        .map(connection -> GroupAnalysisResult.newResultForComponent(
-                                connection,
-                                connectionViolationIssueId,
-                                connectionViolationMessage,
-                                EXPLANATION_PREFIX + connectionViolationMessage
-                        ))
+                        .map(connection -> newResultForComponent(connection, connectionViolationIssueId, connectionViolationMessage))
                         .forEach(results::add);
 
                 return results;
@@ -673,19 +654,10 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
             public Collection<GroupAnalysisResult> analyzeProcessGroup(VersionedProcessGroup processGroup, FlowAnalysisRuleContext context) {
                 Collection<GroupAnalysisResult> results = new HashSet<>();
 
-                results.add(GroupAnalysisResult.newResultForGroup(
-                        groupViolationIssueId,
-                        groupViolationMessage,
-                        EXPLANATION_PREFIX + groupViolationMessage
-                ));
+                results.add(newResultForGroup(groupViolationIssueId, groupViolationMessage));
 
                 processGroup.getProcessors().stream()
-                        .map(processor -> GroupAnalysisResult.newResultForComponent(
-                                processor,
-                                processorViolationIssueIdInGroupAnalysis,
-                                processorViolationMessageInGroupAnalysis,
-                                EXPLANATION_PREFIX + processorViolationMessageInGroupAnalysis
-                        ))
+                        .map(processor -> newResultForComponent(processor, processorViolationIssueIdInGroupAnalysis, processorViolationMessageInGroupAnalysis))
                         .forEach(results::add);
 
                 return results;
@@ -758,19 +730,10 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
             public Collection<GroupAnalysisResult> analyzeProcessGroup(VersionedProcessGroup processGroup, FlowAnalysisRuleContext context) {
                 Collection<GroupAnalysisResult> results = new HashSet<>();
 
-                results.add(GroupAnalysisResult.newResultForGroup(
-                        groupViolationIssueId,
-                        groupViolationMessage,
-                        EXPLANATION_PREFIX + groupViolationMessage
-                ));
+                results.add(newResultForGroup(groupViolationIssueId, groupViolationMessage));
 
                 processGroup.getProcessors().stream()
-                        .map(processor -> GroupAnalysisResult.newResultForComponent(
-                                processor,
-                                processorViolationIssueIdInGroupAnalysis,
-                                processorViolationMessageInGroupAnalysis,
-                                EXPLANATION_PREFIX + processorViolationMessageInGroupAnalysis
-                        ))
+                        .map(processor -> newResultForComponent(processor, processorViolationIssueIdInGroupAnalysis, processorViolationMessageInGroupAnalysis))
                         .forEach(results::add);
 
                 return results;
@@ -827,19 +790,10 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
             public Collection<GroupAnalysisResult> analyzeProcessGroup(VersionedProcessGroup processGroup, FlowAnalysisRuleContext context) {
                 Collection<GroupAnalysisResult> results = new HashSet<>();
 
-                results.add(GroupAnalysisResult.newResultForGroup(
-                        groupViolationIssueId,
-                        groupViolationMessage,
-                        EXPLANATION_PREFIX + groupViolationMessage
-                ));
+                results.add(newResultForGroup(groupViolationIssueId, groupViolationMessage));
 
                 processGroup.getProcessors().stream()
-                        .map(processor -> GroupAnalysisResult.newResultForComponent(
-                                processor,
-                                processorViolationIssueIdInGroupAnalysis,
-                                processorViolationMessageInGroupAnalysis,
-                                EXPLANATION_PREFIX + processorViolationMessageInGroupAnalysis
-                        ))
+                        .map(processor -> newResultForComponent(processor, processorViolationIssueIdInGroupAnalysis, processorViolationMessageInGroupAnalysis))
                         .forEach(results::add);
 
                 return results;
@@ -909,7 +863,7 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
             public Collection<ComponentAnalysisResult> analyzeComponent(VersionedComponent component, FlowAnalysisRuleContext context) {
                 Collection<ComponentAnalysisResult> results = new HashSet<>();
 
-                results.add(ComponentAnalysisResult.newResult(
+                results.add(new ComponentAnalysisResult(
                         processorViolationIssueId,
                         processorViolationMessage,
                         EXPLANATION_PREFIX + processorViolationMessage
@@ -922,19 +876,10 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
             public Collection<GroupAnalysisResult> analyzeProcessGroup(VersionedProcessGroup processGroup, FlowAnalysisRuleContext context) {
                 Collection<GroupAnalysisResult> results = new HashSet<>();
 
-                results.add(GroupAnalysisResult.newResultForGroup(
-                        groupViolationIssueId,
-                        groupViolationMessage,
-                        EXPLANATION_PREFIX + groupViolationMessage
-                ));
+                results.add(newResultForGroup(groupViolationIssueId, groupViolationMessage));
 
                 processGroup.getProcessors().stream()
-                        .map(processor -> GroupAnalysisResult.newResultForComponent(
-                                processor,
-                                groupScopedProcessorViolationIssueId,
-                                groupScopedProcessorViolationMessage,
-                                EXPLANATION_PREFIX + groupScopedProcessorViolationMessage
-                        ))
+                        .map(processor -> newResultForComponent(processor, groupScopedProcessorViolationIssueId, groupScopedProcessorViolationMessage))
                         .forEach(results::add);
 
                 return results;
@@ -1118,12 +1063,7 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
 
                 if (produceViolation.get()) {
                     processGroup.getProcessors().stream()
-                            .map(processor -> GroupAnalysisResult.newResultForComponent(
-                                    processor,
-                                    issueId,
-                                    processorViolationMessage,
-                                    EXPLANATION_PREFIX + processorViolationMessage
-                            ))
+                            .map(processor -> newResultForComponent(processor, issueId, processorViolationMessage))
                             .forEach(results::add);
                 }
 
@@ -1169,11 +1109,7 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
                 Collection<GroupAnalysisResult> results = new HashSet<>();
 
                 if (processGroup.getIdentifier().equals(childProcessGroup.getIdentifier())) {
-                    GroupAnalysisResult result = GroupAnalysisResult.newResultForGroup(
-                            issueId,
-                            violationMessage,
-                            EXPLANATION_PREFIX + violationMessage
-                    );
+                    GroupAnalysisResult result = newResultForGroup(issueId, violationMessage);
 
                     results.add(result);
                 }
@@ -1219,11 +1155,7 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
                 Collection<GroupAnalysisResult> results = new HashSet<>();
 
                 if (produceChildViolation.get() && processGroup.getIdentifier().equals(childProcessGroup.getIdentifier())) {
-                    GroupAnalysisResult result = GroupAnalysisResult.newResultForGroup(
-                            issueId,
-                            violationMessage,
-                            EXPLANATION_PREFIX + violationMessage
-                    );
+                    GroupAnalysisResult result = newResultForGroup(issueId, violationMessage);
 
                     results.add(result);
                 }
@@ -1264,11 +1196,7 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
                 Collection<GroupAnalysisResult> results = new HashSet<>();
 
                 if (processGroup.getIdentifier().equals(childProcessGroup.getIdentifier())) {
-                    GroupAnalysisResult result = GroupAnalysisResult.newResultForGroup(
-                            issueId,
-                            violationMessageWrapper.get(),
-                            EXPLANATION_PREFIX + violationMessageWrapper.get()
-                    );
+                    GroupAnalysisResult result = newResultForGroup(issueId, violationMessageWrapper.get());
 
                     results.add(result);
                 }
@@ -1573,12 +1501,7 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
                 Collection<GroupAnalysisResult> results = new HashSet<>();
 
                 processGroup.getProcessors().stream()
-                        .map(processor -> GroupAnalysisResult.newResultForComponent(
-                                processor,
-                                issueId,
-                                violationMessage,
-                                EXPLANATION_PREFIX + violationMessage
-                        ))
+                        .map(processor -> newResultForComponent(processor, issueId, violationMessage))
                         .forEach(results::add);
 
                 return results;
@@ -1634,11 +1557,7 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
             public Collection<GroupAnalysisResult> analyzeProcessGroup(VersionedProcessGroup processGroup, FlowAnalysisRuleContext context) {
                 Collection<GroupAnalysisResult> results = new HashSet<>();
 
-                results.add(GroupAnalysisResult.newResultForGroup(
-                        issueId,
-                        violationMessage,
-                        EXPLANATION_PREFIX + violationMessage
-                ));
+                results.add(newResultForGroup(issueId, violationMessage));
 
                 return results;
             }
@@ -1690,11 +1609,7 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
             public Collection<GroupAnalysisResult> analyzeProcessGroup(VersionedProcessGroup processGroup, FlowAnalysisRuleContext context) {
                 Collection<GroupAnalysisResult> results = new HashSet<>();
 
-                results.add(GroupAnalysisResult.newResultForGroup(
-                        issueId,
-                        violationMessage,
-                        EXPLANATION_PREFIX + violationMessage
-                ));
+                results.add(newResultForGroup(issueId, violationMessage));
 
                 return results;
             }
@@ -1751,7 +1666,7 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
             @Override
             public Collection<ComponentAnalysisResult> analyzeComponent(VersionedComponent component, FlowAnalysisRuleContext context) {
                 Set<ComponentAnalysisResult> results = issueIdToViolationMessage.entrySet().stream()
-                        .map(issueIdAndViolationMessage -> ComponentAnalysisResult.newResult(
+                        .map(issueIdAndViolationMessage -> new ComponentAnalysisResult(
                                 issueIdAndViolationMessage.getKey(),
                                 issueIdAndViolationMessage.getValue(),
                                 EXPLANATION_PREFIX + issueIdAndViolationMessage.getValue())
@@ -1769,15 +1684,23 @@ public class FlowAnalyzerIT extends AbstractFlowAnalysisIT {
         return new AbstractFlowAnalysisRule() {
             @Override
             public Collection<GroupAnalysisResult> analyzeProcessGroup(VersionedProcessGroup processGroup, FlowAnalysisRuleContext context) {
-                GroupAnalysisResult result = GroupAnalysisResult.newResultForGroup(
-                        issueId,
-                        violationMessage,
-                        EXPLANATION_PREFIX + violationMessage
-                );
+                GroupAnalysisResult result = newResultForGroup(issueId, violationMessage);
 
                 return Collections.singleton(result);
             }
         };
+    }
+
+    private GroupAnalysisResult newResultForGroup(String issueId, String violationMessage) {
+        return GroupAnalysisResult.forGroup(issueId, violationMessage)
+                .explanation(EXPLANATION_PREFIX + violationMessage)
+                .build();
+    }
+
+    private GroupAnalysisResult newResultForComponent(VersionedComponent component, String issueId, String violationMessage) {
+        return GroupAnalysisResult.forComponent(component, issueId, violationMessage)
+                .explanation(EXPLANATION_PREFIX + violationMessage)
+                .build();
     }
 
     private RuleViolation disable(RuleViolation expectedRuleViolation) {

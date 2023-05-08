@@ -70,9 +70,9 @@ public class DisallowComponentType extends AbstractFlowAnalysisRule {
             String encounteredSimpleComponentType = encounteredComponentType.substring(encounteredComponentType.lastIndexOf(".") + 1);
 
             if (encounteredComponentType.equals(componentType) || encounteredSimpleComponentType.equals(componentType)) {
-                ComponentAnalysisResult result = ComponentAnalysisResult.newResult(
+                ComponentAnalysisResult result = new ComponentAnalysisResult(
                         "default",
-                        "'" + componentType + "' is not allowed!"
+                        "'" + componentType + "' is not allowed"
                 );
 
                 results.add(result);

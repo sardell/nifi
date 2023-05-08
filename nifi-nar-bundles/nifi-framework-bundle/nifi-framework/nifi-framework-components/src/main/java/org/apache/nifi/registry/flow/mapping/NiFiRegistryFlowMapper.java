@@ -481,7 +481,6 @@ public class NiFiRegistryFlowMapper {
         if (flowMappingOptions.isMapInstanceIdentifiers()) {
             versionedRule.setInstanceIdentifier(flowAnalysisRuleNode.getIdentifier());
         }
-        versionedRule.setAnnotationData(flowAnalysisRuleNode.getAnnotationData());
         versionedRule.setBundle(mapBundle(flowAnalysisRuleNode.getBundleCoordinate()));
         versionedRule.setComments(flowAnalysisRuleNode.getComments());
         versionedRule.setComponentType(ComponentType.FLOW_ANALYSIS_RULE);

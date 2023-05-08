@@ -84,7 +84,7 @@ public class GhostFlowAnalysisRule implements FlowAnalysisRule {
     }
 
     @Override
-    public void initialize(FlowAnalysisRuleInitializationContext config) throws InitializationException {
-        this.logger = config.getLogger();
+    public void initialize(FlowAnalysisRuleInitializationContext context) throws InitializationException {
+        this.logger = context.getLogger();
     }
 }

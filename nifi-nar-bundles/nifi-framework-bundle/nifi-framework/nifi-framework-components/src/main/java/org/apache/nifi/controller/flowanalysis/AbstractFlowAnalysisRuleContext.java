@@ -26,7 +26,6 @@ import org.apache.nifi.components.resource.ResourceContext;
 import org.apache.nifi.components.resource.StandardResourceContext;
 import org.apache.nifi.components.resource.StandardResourceReferenceFactory;
 import org.apache.nifi.controller.FlowAnalysisRuleNode;
-import org.apache.nifi.controller.flow.FlowManager;
 import org.apache.nifi.controller.service.ControllerServiceProvider;
 import org.apache.nifi.parameter.ParameterLookup;
 import org.apache.nifi.registry.VariableRegistry;
@@ -78,7 +77,7 @@ public abstract class AbstractFlowAnalysisRuleContext implements FlowAnalysisRul
 
     @Override
     public Map<PropertyDescriptor, String> getProperties() {
-        return Collections.unmodifiableMap(properties);
+        return properties;
     }
 
     @Override
@@ -102,6 +101,4 @@ public abstract class AbstractFlowAnalysisRuleContext implements FlowAnalysisRul
         return new StandardPropertyValue(resourceContext, configuredValue == null ? descriptor.getDefaultValue() : configuredValue, serviceProvider, parameterLookup, preparedQueries.get(property),
             variableRegistry);
     }
-
-    protected abstract FlowManager getFlowManager();
 }

@@ -66,7 +66,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public abstract class AbstractFlowAnalysisRuleNode extends AbstractComponentNode implements FlowAnalysisRuleNode {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractFlowAnalysisRuleNode.class);
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     private final AtomicReference<FlowAnalysisRuleDetails> flowAnalysisRuleRef;
     private final ControllerServiceLookup serviceLookup;
@@ -279,15 +279,15 @@ public abstract class AbstractFlowAnalysisRuleNode extends AbstractComponentNode
 
             this.state = newState;
 
-            LOG.debug("Successfully {} {}", newState.toString().toLowerCase(), this);
+            log.debug("Successfully {} {}", newState.toString().toLowerCase(), this);
         } catch (Exception e) {
             final Throwable cause = e instanceof InvocationTargetException ? e.getCause() : e;
 
             final ComponentLog componentLog = new SimpleProcessLogger(getIdentifier(), getFlowAnalysisRule());
 
-            componentLog.error("Failed to invoke {} method due to {}", annotation.getSimpleName(), cause);
+            componentLog.error("Failed to invoke {} method", cause);
 
-            LOG.error("Failed to invoke {} method of {} due to {}", annotation.getSimpleName(), getFlowAnalysisRule(), cause.toString());
+            log.error("Failed to invoke {} method of {} due to {}", annotation.getSimpleName(), getFlowAnalysisRule(), cause.toString());
         }
     }
 

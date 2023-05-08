@@ -486,7 +486,7 @@ public class ExtensionBuilder {
         try {
             loggableComponent = createLoggableFlowAnalysisRule();
         } catch (final FlowAnalysisRuleInstantiationException rtie) {
-            logger.error("Could not create FlowAnalysisRule of type " + type + " for ID " + identifier + "; creating \"Ghost\" implementation", rtie);
+            logger.error("Could not create FlowAnalysisRule of type {} for ID {}; creating \"Ghost\" implementation", type, identifier, rtie);
             final GhostFlowAnalysisRule ghostFlowAnalysisRule = new GhostFlowAnalysisRule();
             ghostFlowAnalysisRule.setIdentifier(identifier);
             ghostFlowAnalysisRule.setCanonicalClassName(type);

@@ -198,8 +198,8 @@ public class FlowAnalysisRuleDTO extends ComponentDTO {
      * @return current scheduling state of the flow analysis rule
      */
     @ApiModelProperty(
-            value = "The state of the reporting task.",
-            allowableValues = "RUNNING, STOPPED, DISABLED"
+            value = "The state of the flow analysis rule.",
+            allowableValues = "ENABLED, DISABLED"
     )
     public String getState() {
         return state;

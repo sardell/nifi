@@ -28,81 +28,9 @@ import java.util.StringJoiner;
 public class GroupAnalysisResult extends AbstractAnalysisResult {
     private final Optional<VersionedComponent> component;
 
-    private GroupAnalysisResult(String issueId, String message, String explanation) {
-        this(issueId, message, explanation, Optional.empty());
-    }
-
-    private GroupAnalysisResult(VersionedComponent component, String issueId, String message, String explanation) {
-        this(issueId, message, explanation, Optional.of(component));
-    }
-
-    private GroupAnalysisResult(String issueId, String message, String explanation, Optional<VersionedComponent> component) {
+    private GroupAnalysisResult(final String issueId, final String message, final String explanation, final Optional<VersionedComponent> component) {
         super(issueId, message, explanation);
         this.component = component;
-    }
-
-    /**
-     * Create a new analysis result tied to the currently analyzed process group
-     *
-     * @param issueId A rule-defined id that corresponds to a unique type of issue recognized by the rule.
-     *                Newer analysis runs may produce a result with the same issueId in which case the old one will
-     *                be overwritten (or recreated if it is the same in other aspects as well).
-     *                However, if the previous result was disabled the new one will be disabled as well.
-     * @param message A violation message
-     * @return a new analysis result instance tied to the currently analyzed process group
-     */
-    public static GroupAnalysisResult newResultForGroup(String issueId, String message) {
-        return newResultForGroup(issueId, message, null);
-    }
-
-    /**
-     * Create a new analysis result tied to the currently analyzed process group
-     *
-     * @param issueId     A rule-defined id that corresponds to a unique type of issue recognized by the rule.
-     *                    Newer analysis runs may produce a result with the same issueId in which case the old one will
-     *                    be overwritten (or recreated if it is the same in other aspects as well).
-     *                    However, if the previous result was disabled the new one will be disabled as well.
-     * @param message     A violation message
-     * @param explanation A detailed explanation of the violation
-     * @return a new analysis result instance tied to the currently analyzed process group
-     */
-    public static GroupAnalysisResult newResultForGroup(String issueId, String message, String explanation) {
-        return new GroupAnalysisResult(issueId, message, explanation);
-    }
-
-    /**
-     * Create a new analysis result tied to a component.
-     * Note that the result will be scoped to the process group of the component and not the currently analyzed group.
-     * This means that even when a new analysis is run against that process group, this result will become obsolete.
-     *
-     * @param component The component that this result is tied to
-     * @param issueId   A rule-defined id that corresponds to a unique type of issue recognized by the rule.
-     *                  Newer analysis runs may produce a result with the same issueId in which case the old one will
-     *                  be overwritten (or recreated if it is the same in other aspects as well).
-     *                  However, if the previous result was disabled the new one will be disabled as well.
-     * @param message   A violation message
-     * @return a new analysis result tied to a component
-     */
-    public static GroupAnalysisResult newResultForComponent(VersionedComponent component, String issueId, String message) {
-        return newResultForComponent(component, issueId, message, null);
-    }
-
-    /**
-     * Create a new analysis result tied to a component.
-     * Note that the result will be scoped to the process group of the component and not the currently analyzed group.
-     * This means that even when a new analysis is run against that process group, this result will become obsolete.
-     *
-     * @param component   The component that this result is tied to
-     * @param issueId     A rule-defined id that corresponds to a unique type of issue recognized by the rule.
-     *                    Newer analysis runs may produce a result with the same issueId in which case the old one will
-     *                    be overwritten (or recreated if it is the same in other aspects as well).
-     *                    However, if the previous result was disabled the new one will be disabled as well.
-     * @param message     A violation message
-     * @param explanation A detailed explanation of the violation
-     * @return a new analysis result tied to a component
-     */
-    public static GroupAnalysisResult newResultForComponent(VersionedComponent component, String issueId, String message, String explanation) {
-        return new GroupAnalysisResult(component, issueId, message, explanation);
     }
 
     /**
@@ -120,5 +48,65 @@ public class GroupAnalysisResult extends AbstractAnalysisResult {
                 .add("explanation='" + explanation + "'")
                 .add("component='" + component + "'")
                 .toString();
+    }
+
+    /**
+     * Build a new analysis result tied to the currently analyzed process group
+     *
+     * @param issueId     A rule-defined id that corresponds to a unique type of issue recognized by the rule.
+     *                    Newer analysis runs may produce a result with the same issueId in which case the old one will
+     *                    be overwritten (or recreated if it is the same in other aspects as well).
+     *                    However, if the previous result was disabled the new one will be disabled as well.
+     * @param message     A violation message
+     * @return a Builder for a new analysis result instance tied to the currently analyzed process group
+     */
+    public static Builder forGroup(final String issueId, final String message) {
+        return new Builder(null, issueId, message);
+    }
+
+    /**
+     * Build a new analysis result tied to a component.
+     * Note that the result will be scoped to the process group of the component and not the currently analyzed group.
+     * This means that even when a new analysis is run against that process group, this result will become obsolete.
+     *
+     * @param component The component that this result is tied to
+     * @param issueId   A rule-defined id that corresponds to a unique type of issue recognized by the rule.
+     *                  Newer analysis runs may produce a result with the same issueId in which case the old one will
+     *                  be overwritten (or recreated if it is the same in other aspects as well).
+     *                  However, if the previous result was disabled the new one will be disabled as well.
+     * @param message   A violation message
+     * @return a Builder for a new analysis result tied to a component
+     */
+    public static Builder forComponent(final VersionedComponent component, final String issueId, final String message) {
+        return new Builder(component, issueId, message);
+    }
+
+    public static class Builder {
+        private final VersionedComponent component;
+        private final String issueId;
+        private final String message;
+        private String explanation;
+
+        private Builder(final VersionedComponent component, final String issueId, final String message) {
+            this.component = component;
+            this.issueId = issueId;
+            this.message = message;
+        }
+
+        /**
+         * @param explanation A detailed explanation of the violation
+         * @return this Builder
+         */
+        public Builder explanation(final String explanation) {
+            this.explanation = explanation;
+            return this;
+        }
+
+        /**
+         * @return the flow analysis result
+         */
+        public GroupAnalysisResult build() {
+            return new GroupAnalysisResult(issueId, message, explanation, Optional.ofNullable(component));
+        }
     }
 }

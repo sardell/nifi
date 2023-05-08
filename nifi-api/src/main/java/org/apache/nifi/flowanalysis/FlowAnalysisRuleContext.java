@@ -22,6 +22,7 @@ import org.apache.nifi.context.PropertyContext;
 import org.apache.nifi.controller.VersionedControllerServiceLookup;
 
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * This interface provides a bridge between the NiFi Framework and a
@@ -66,8 +67,8 @@ public interface FlowAnalysisRuleContext extends PropertyContext {
     int getMaxTimerDrivenThreadCount();
 
     /**
-     * @return the ID of this node in the cluster, or <code>null</code> if either this node is not clustered or the Node Identifier
+     * @return an Optional with the ID of this node in the cluster, or empty if either this node is not clustered or the Node Identifier
      * has not yet been established
      */
-    String getClusterNodeIdentifier();
+    Optional<String> getClusterNodeIdentifier();
 }

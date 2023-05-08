@@ -465,16 +465,6 @@ public abstract class AbstractFlowManager implements FlowManager {
     }
 
     @Override
-    public FlowAnalysisRuleNode createFlowAnalysisRule(final String type, final BundleCoordinate bundleCoordinate) {
-        return createFlowAnalysisRule(type, bundleCoordinate, true);
-    }
-
-    @Override
-    public FlowAnalysisRuleNode createFlowAnalysisRule(final String type, final BundleCoordinate bundleCoordinate, final boolean firstTimeAdded) {
-        return createFlowAnalysisRule(type, UUID.randomUUID().toString(), bundleCoordinate, firstTimeAdded);
-    }
-
-    @Override
     public FlowAnalysisRuleNode createFlowAnalysisRule(final String type, final String id, final BundleCoordinate bundleCoordinate, final boolean firstTimeAdded) {
         return createFlowAnalysisRule(type, id, bundleCoordinate, Collections.emptySet(), firstTimeAdded, true, null);
     }

@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 package org.apache.nifi.controller.flowanalysis;
+
 import org.apache.nifi.cluster.protocol.NodeIdentifier;
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.components.state.StateManager;
 import org.apache.nifi.controller.FlowController;
 import org.apache.nifi.controller.VersionedControllerServiceLookup;
-import org.apache.nifi.controller.flow.FlowManager;
 import org.apache.nifi.controller.service.ControllerServiceNode;
 import org.apache.nifi.controller.service.ControllerServiceProvider;
 import org.apache.nifi.flow.VersionedControllerService;
@@ -33,6 +33,7 @@ import org.apache.nifi.registry.flow.mapping.NiFiRegistryFlowMapper;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public class StandardFlowAnalysisRuleContext extends AbstractFlowAnalysisRuleContext implements FlowAnalysisRuleContext {
     private final String ruleName;
@@ -57,11 +58,6 @@ public class StandardFlowAnalysisRuleContext extends AbstractFlowAnalysisRuleCon
     }
 
     @Override
-    protected FlowManager getFlowManager() {
-        return flowController.getFlowManager();
-    }
-
-    @Override
     public boolean isClustered() {
         return flowController.isConfiguredForClustering();
     }
@@ -72,9 +68,13 @@ public class StandardFlowAnalysisRuleContext extends AbstractFlowAnalysisRuleCon
     }
 
     @Override
-    public String getClusterNodeIdentifier() {
+    public Optional<String> getClusterNodeIdentifier() {
         final NodeIdentifier nodeId = flowController.getNodeId();
-        return nodeId == null ? null : nodeId.getId();
+
+        final Optional<String> nodeIdOptional = Optional.ofNullable(nodeId)
+                .map(NodeIdentifier::getId);
+
+        return nodeIdOptional;
     }
 
     @Override

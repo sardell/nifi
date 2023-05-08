@@ -709,8 +709,6 @@ public class VersionedFlowSynchronizer implements FlowSynchronizer {
         ruleNode.setComments(flowAnalysisRule.getComments());
         ruleNode.setEnforcementPolicy(flowAnalysisRule.getEnforcementPolicy());
 
-        ruleNode.setAnnotationData(flowAnalysisRule.getAnnotationData());
-
         final Set<String> sensitiveDynamicPropertyNames = getSensitiveDynamicPropertyNames(ruleNode, flowAnalysisRule);
         final Map<String, String> decryptedProperties = decryptProperties(flowAnalysisRule.getProperties(), controller.getEncryptor());
         ruleNode.setProperties(decryptedProperties, false, sensitiveDynamicPropertyNames);

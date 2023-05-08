@@ -4624,7 +4624,7 @@ public class ProcessGroupResource extends FlowUpdateResource<ProcessGroupImportE
     @POST
     @Consumes(MediaType.WILDCARD)
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("flow-analysis/{processGroupId}")
+    @Path("{id}/flow-analysis-requests")
     @ApiOperation(
         value = "Executes a flow analysis for components within a given process group",
         response = AnalyzeFlowRequestEntity.class,
@@ -4643,7 +4643,7 @@ public class ProcessGroupResource extends FlowUpdateResource<ProcessGroupImportE
             value = "The id of the process group representing (a part of) the flow to be analyzed.",
             required = true
         )
-        @PathParam("processGroupId")
+        @PathParam("id")
         final String processGroupId
     ) {
         if (isReplicateRequest()) {
@@ -4681,7 +4681,7 @@ public class ProcessGroupResource extends FlowUpdateResource<ProcessGroupImportE
                         serviceFacade.analyzeProcessGroup(analyzedGroupId);
                         asyncRequest.markStepComplete();
                     } catch (final Exception e) {
-                        logger.error("Failed to run flow analysis on process group " + processGroupId, e);
+                        logger.error("Failed to run flow analysis on process group {}", processGroupId, e);
                         asyncRequest.fail("Failed to run flow analysis on process group " + processGroupId + " due to " + e);
                     }
                 };
@@ -4706,7 +4706,7 @@ public class ProcessGroupResource extends FlowUpdateResource<ProcessGroupImportE
     @GET
     @Consumes(MediaType.WILDCARD)
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("flow-analysis/{requestId}")
+    @Path("{id}/flow-analysis-requests/{requestId}")
     @ApiOperation(
         value = "Gets the current status of a flow analysis request.",
         response = AnalyzeFlowRequestEntity.class,
@@ -4724,6 +4724,12 @@ public class ProcessGroupResource extends FlowUpdateResource<ProcessGroupImportE
         }
     )
     public Response getAnalyzeFlowRequest(
+        @ApiParam(
+            value = "The id of the process group representing (a part of) the flow being analyzed.",
+            required = true
+        )
+        @PathParam("id")
+        final String processGroupId,
         @ApiParam(
             value = "The id of the process group representing (a part of) the flow to be analyzed.",
             required = true
@@ -4754,7 +4760,7 @@ public class ProcessGroupResource extends FlowUpdateResource<ProcessGroupImportE
     @DELETE
     @Consumes(MediaType.WILDCARD)
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("flow-analysis/{requestId}")
+    @Path("{id}/flow-analysis-requests/{requestId}")
     @ApiOperation(
         value = "Cancels a flow analysis request.",
         response = AnalyzeFlowRequestEntity.class,
@@ -4772,6 +4778,12 @@ public class ProcessGroupResource extends FlowUpdateResource<ProcessGroupImportE
         }
     )
     public Response removeAnalyzeFlowRequest(
+        @ApiParam(
+            value = "The id of the process group representing (a part of) the flow being analyzed.",
+            required = true
+        )
+        @PathParam("id")
+        final String processGroupId,
         @Context final HttpServletRequest httpServletRequest,
         @ApiParam(
             value = "The id of the flow analysis request",

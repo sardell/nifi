@@ -208,7 +208,6 @@ public class StandardFlowComparator implements FlowComparator {
             return;
         }
 
-        addIfDifferent(differences, DifferenceType.ANNOTATION_DATA_CHANGED, ruleA, ruleB, VersionedFlowAnalysisRule::getAnnotationData);
         addIfDifferent(differences, DifferenceType.BUNDLE_CHANGED, ruleA, ruleB, VersionedFlowAnalysisRule::getBundle);
         addIfDifferent(differences, DifferenceType.ENFORCEMENT_POLICY_CHANGED, ruleA, ruleB, VersionedFlowAnalysisRule::getEnforcementPolicy);
         addIfDifferent(differences, DifferenceType.SCHEDULED_STATE_CHANGED, ruleA, ruleB, VersionedFlowAnalysisRule::getScheduledState);

@@ -22,18 +22,8 @@ import org.apache.nifi.flowanalysis.EnforcementPolicy;
 
 public class VersionedFlowAnalysisRule extends VersionedConfigurableExtension {
 
-    private String annotationData;
     private ScheduledState scheduledState;
     private EnforcementPolicy enforcementPolicy;
-
-    @ApiModelProperty(value = "The annotation for the flow analysis rule. This is how the custom UI relays configuration to the flow analysis rule.")
-    public String getAnnotationData() {
-        return annotationData;
-    }
-
-    public void setAnnotationData(String annotationData) {
-        this.annotationData = annotationData;
-    }
 
     @ApiModelProperty("How to handle violations.")
     public EnforcementPolicy getEnforcementPolicy() {

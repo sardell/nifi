@@ -32,10 +32,10 @@ public interface FlowAnalysisRule extends ConfigurableComponent {
      * Provides the Flow Analysis Rule with access to objects that may be of use
      * throughout its lifecycle
      *
-     * @param config see {@link FlowAnalysisRuleInitializationContext}
+     * @param context see {@link FlowAnalysisRuleInitializationContext}
      * @throws org.apache.nifi.reporting.InitializationException if unable to initialize
      */
-    void initialize(FlowAnalysisRuleInitializationContext config) throws InitializationException;
+    void initialize(FlowAnalysisRuleInitializationContext context) throws InitializationException;
 
     /**
      * Analyze a component provided by the framework.

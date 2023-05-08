@@ -20,20 +20,15 @@ package org.apache.nifi.flowanalysis;
  * Holds information about a component violating a {@link FlowAnalysisRule}
  */
 public class ComponentAnalysisResult extends AbstractAnalysisResult {
-    private ComponentAnalysisResult(String issueId, String message, String explanation) {
-        super(issueId, message, explanation);
-    }
-
     /**
      * @param issueId A rule-defined id that corresponds to a unique type of issue recognized by the rule.
      *                Newer analysis runs may produce a result with the same issueId in which case the old one will
      *                be overwritten (or recreated if it is the same in other aspects as well).
      *                However, if the previous result was disabled the new one will be disabled as well.
      * @param message A violation message
-     * @return a new result instance
      */
-    public static ComponentAnalysisResult newResult(String issueId, String message) {
-        return newResult(issueId, message, null);
+    public ComponentAnalysisResult(final String issueId, final String message) {
+        this(issueId, message, null);
     }
 
     /**
@@ -43,9 +38,8 @@ public class ComponentAnalysisResult extends AbstractAnalysisResult {
      *                However, if the previous result was disabled the new one will be disabled as well.
      * @param message A violation message
      * @param explanation A detailed explanation of the violation
-     * @return a new result instance
      */
-    public static ComponentAnalysisResult newResult(String issueId, String message, String explanation) {
-        return new ComponentAnalysisResult(issueId, message, explanation);
+    public ComponentAnalysisResult(final String issueId, final String message, final String explanation) {
+        super(issueId, message, explanation);
     }
 }

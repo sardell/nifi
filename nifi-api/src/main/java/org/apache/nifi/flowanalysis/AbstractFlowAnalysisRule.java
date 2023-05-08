@@ -27,10 +27,10 @@ public abstract class AbstractFlowAnalysisRule extends AbstractConfigurableCompo
     private ComponentLog logger;
 
     @Override
-    public void initialize(FlowAnalysisRuleInitializationContext config) throws InitializationException {
-        identifier = config.getIdentifier();
+    public void initialize(FlowAnalysisRuleInitializationContext context) throws InitializationException {
+        identifier = context.getIdentifier();
         description = getClass().getSimpleName() + "[id=" + identifier + "]";
-        logger = config.getLogger();
+        logger = context.getLogger();
     }
 
     @Override

@@ -526,17 +526,17 @@ public class StandardFlowManager extends AbstractFlowManager implements FlowMana
 
     @Override
     public FlowAnalysisRuleNode createFlowAnalysisRule(
-            String type,
-            String id,
-            BundleCoordinate bundleCoordinate,
-            Set<URL> additionalUrls,
-            boolean firstTimeAdded,
-            boolean register,
-            String classloaderIsolationKey
+            final String type,
+            final String id,
+            final BundleCoordinate bundleCoordinate,
+            final Set<URL> additionalUrls,
+            final boolean firstTimeAdded,
+            final boolean register,
+            final String classloaderIsolationKey
     ) {
-        if (type == null || id == null || bundleCoordinate == null) {
-            throw new NullPointerException();
-        }
+        requireNonNull(type);
+        requireNonNull(id);
+        requireNonNull(bundleCoordinate);
 
         // make sure the first reference to LogRepository happens outside of a NarCloseable so that we use the framework's ClassLoader
         final LogRepository logRepository = LogRepositoryFactory.getRepository(id);
@@ -546,7 +546,6 @@ public class StandardFlowManager extends AbstractFlowManager implements FlowMana
             .identifier(id)
             .type(type)
             .bundleCoordinate(bundleCoordinate)
-            .extensionManager(flowController.getExtensionManager())
             .controllerServiceProvider(flowController.getControllerServiceProvider())
             .processScheduler(processScheduler)
             .nodeTypeProvider(flowController)
