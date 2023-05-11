@@ -18,8 +18,8 @@ package org.apache.nifi.controller;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.nifi.admin.service.AuditService;
-import org.apache.nifi.analyzeflow.StandardFlowAnalyzer;
-import org.apache.nifi.analyzeflow.TriggerFlowAnalysisTask;
+import org.apache.nifi.flowanalysis.StandardFlowAnalyzer;
+import org.apache.nifi.flowanalysis.TriggerFlowAnalysisTask;
 import org.apache.nifi.annotation.lifecycle.OnConfigurationRestored;
 import org.apache.nifi.annotation.notification.PrimaryNodeState;
 import org.apache.nifi.authorization.Authorizer;

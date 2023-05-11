@@ -19,45 +19,34 @@
         <artifactId>nifi-standard-bundle</artifactId>
         <version>2.0.0-SNAPSHOT</version>
     </parent>
-    <artifactId>nifi-standard-nar</artifactId>
-    <packaging>nar</packaging>
-    <description>NiFi Standard Extensions NAR</description>
-    <properties>
-        <maven.javadoc.skip>true</maven.javadoc.skip>
-        <source.skip>true</source.skip>
-    </properties>
+
+    <artifactId>nifi-standard-rules</artifactId>
+    <packaging>jar</packaging>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.nifi</groupId>
-            <artifactId>nifi-standard-services-api-nar</artifactId>
+            <artifactId>nifi-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.nifi</groupId>
+            <artifactId>nifi-properties</artifactId>
             <version>2.0.0-SNAPSHOT</version>
-            <type>nar</type>
         </dependency>
         <dependency>
             <groupId>org.apache.nifi</groupId>
-            <artifactId>nifi-standard-processors</artifactId>
+            <artifactId>nifi-framework-api</artifactId>
+            <version>2.0.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.apache.nifi</groupId>
-            <artifactId>nifi-standard-reporting-tasks</artifactId>
+            <artifactId>nifi-utils</artifactId>
+            <version>2.0.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.apache.nifi</groupId>
-            <artifactId>nifi-standard-rules</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.nifi</groupId>
-            <artifactId>nifi-standard-parameter-providers</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.nifi</groupId>
-            <artifactId>nifi-standard-content-viewer</artifactId>
-            <type>war</type>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.nifi</groupId>
-            <artifactId>nifi-jolt-transform-json-ui</artifactId>
-            <type>war</type>
+            <artifactId>nifi-record-serialization-service-api</artifactId>
+            <version>2.0.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 </project>

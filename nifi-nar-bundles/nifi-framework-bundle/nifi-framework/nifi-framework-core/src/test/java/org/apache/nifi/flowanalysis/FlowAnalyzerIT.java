@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.nifi.analyzeflow;
+package org.apache.nifi.flowanalysis;
 
 import org.apache.nifi.components.ValidationResult;
 import org.apache.nifi.components.validation.ValidationStatus;
@@ -24,11 +24,6 @@ import org.apache.nifi.controller.ProcessorNode;
 import org.apache.nifi.controller.service.ControllerServiceNode;
 import org.apache.nifi.flow.VersionedComponent;
 import org.apache.nifi.flow.VersionedProcessGroup;
-import org.apache.nifi.flowanalysis.AbstractFlowAnalysisRule;
-import org.apache.nifi.flowanalysis.ComponentAnalysisResult;
-import org.apache.nifi.flowanalysis.EnforcementPolicy;
-import org.apache.nifi.flowanalysis.FlowAnalysisRuleContext;
-import org.apache.nifi.flowanalysis.GroupAnalysisResult;
 import org.apache.nifi.groups.ProcessGroup;
 import org.apache.nifi.integration.cs.CounterControllerService;
 import org.apache.nifi.validation.RuleViolation;

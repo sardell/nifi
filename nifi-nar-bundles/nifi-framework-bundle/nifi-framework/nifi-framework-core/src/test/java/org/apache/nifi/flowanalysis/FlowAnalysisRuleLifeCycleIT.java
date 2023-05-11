@@ -14,14 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.nifi.analyzeflow;
+package org.apache.nifi.flowanalysis;
 
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.controller.ComponentNode;
 import org.apache.nifi.controller.FlowAnalysisRuleNode;
 import org.apache.nifi.controller.scheduling.TestStandardProcessScheduler;
 import org.apache.nifi.controller.service.ControllerServiceNode;
-import org.apache.nifi.flowanalysis.AbstractFlowAnalysisRule;
 import org.apache.nifi.nar.SystemBundle;
 import org.junit.jupiter.api.Test;
 

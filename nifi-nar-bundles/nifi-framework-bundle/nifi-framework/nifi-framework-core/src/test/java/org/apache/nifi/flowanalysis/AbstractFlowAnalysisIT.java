@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.nifi.analyzeflow;
+package org.apache.nifi.flowanalysis;
 
 import org.apache.nifi.connectable.Connectable;
 import org.apache.nifi.connectable.Connection;
@@ -22,7 +22,6 @@ import org.apache.nifi.controller.FlowAnalysisRuleNode;
 import org.apache.nifi.controller.ProcessorNode;
 import org.apache.nifi.controller.flowanalysis.FlowAnalysisUtil;
 import org.apache.nifi.flow.VersionedProcessGroup;
-import org.apache.nifi.flowanalysis.FlowAnalysisRule;
 import org.apache.nifi.groups.ProcessGroup;
 import org.apache.nifi.integration.FrameworkIntegrationTest;
 import org.apache.nifi.integration.flowanalysis.DelegateFlowAnalysisRule;

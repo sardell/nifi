@@ -29,6 +29,8 @@ public class FlowAnalysisUtil {
         NiFiRegistryFlowMapper mapper = new NiFiRegistryFlowMapper(
                 extensionManager,
                 new FlowMappingOptions.Builder()
+                        .mapPropertyDescriptors(true)
+                        .mapControllerServiceReferencesToVersionedId(true)
                         .stateLookup(VersionedComponentStateLookup.IDENTITY_LOOKUP)
                         .componentIdLookup(ComponentIdLookup.USE_COMPONENT_ID)
                         .mapSensitiveConfiguration(true)

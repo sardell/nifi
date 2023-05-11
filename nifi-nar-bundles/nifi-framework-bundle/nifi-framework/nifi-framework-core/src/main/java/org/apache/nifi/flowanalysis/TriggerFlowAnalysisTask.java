@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.nifi.analyzeflow;
+package org.apache.nifi.flowanalysis;
 
 import org.apache.nifi.controller.flowanalysis.FlowAnalyzer;
 import org.apache.nifi.flow.VersionedProcessGroup;
