@@ -35,7 +35,6 @@ import org.apache.nifi.parameter.ParameterGroupConfiguration;
 import org.apache.nifi.registry.flow.RegisteredFlow;
 import org.apache.nifi.registry.flow.RegisteredFlowSnapshot;
 import org.apache.nifi.flow.VersionedParameterContext;
-import org.apache.nifi.validation.RuleViolation;
 import org.apache.nifi.web.api.dto.AccessPolicyDTO;
 import org.apache.nifi.web.api.dto.AffectedComponentDTO;
 import org.apache.nifi.web.api.dto.BulletinBoardDTO;
@@ -2886,15 +2885,4 @@ public interface NiFiServiceFacade {
      * @return rule violations produced by the analysis of the process group
      */
     FlowAnalysisResultEntity getFlowAnalysisResult(String processGroupId);
-
-    /**
-     * Update an existing violation
-     *
-     * @param scope     see {@link RuleViolation#getScope()}
-     * @param subjectId see {@link RuleViolation#getSubjectId()}
-     * @param ruleId    see {@link RuleViolation#getRuleId()}
-     * @param issueId   see {@link RuleViolation#getIssueId()}
-     * @param enabled   see {@link RuleViolation#isEnabled()}
-     */
-    void updateRuleViolation(String scope, String subjectId, String ruleId, String issueId, Boolean enabled);
 }

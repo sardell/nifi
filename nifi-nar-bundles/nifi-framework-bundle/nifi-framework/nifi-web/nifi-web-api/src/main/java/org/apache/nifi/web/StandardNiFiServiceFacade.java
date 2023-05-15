@@ -6578,12 +6578,6 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
     }
 
     @Override
-    public void updateRuleViolation(String scope, String subjectId, String ruleId, String issueId, Boolean enabled) {
-        ruleViolationsManager.updateRuleViolation(scope, subjectId, ruleId, issueId, enabled);
-        controllerFacade.save();
-    }
-
-    @Override
     public FlowAnalysisResultEntity getFlowAnalysisResult() {
         Collection<RuleViolation> ruleViolations = ruleViolationsManager.getAllRuleViolations();
 
@@ -6639,7 +6633,6 @@ public class StandardNiFiServiceFacade implements NiFiServiceFacade {
                 ruleViolationDto.setRuleId(ruleViolation.getRuleId());
                 ruleViolationDto.setIssueId(ruleViolation.getIssueId());
                 ruleViolationDto.setViolationMessage(ruleViolation.getViolationMessage());
-                ruleViolationDto.setEnabled(ruleViolation.isEnabled());
 
                 String subjectId = ruleViolation.getSubjectId();
                 ruleViolationDto.setSubjectId(subjectId);

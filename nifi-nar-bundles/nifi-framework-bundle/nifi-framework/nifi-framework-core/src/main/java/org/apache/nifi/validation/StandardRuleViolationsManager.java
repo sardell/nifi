@@ -45,13 +45,7 @@ public class StandardRuleViolationsManager implements RuleViolationsManager {
                 .forEach(violation -> violation.setAvailable(false));
 
             violations.forEach(violation -> componentRuleViolations
-                .compute(new RuleViolationKey(violation), (ruleViolationKey, currentViolation) -> {
-                    if (currentViolation != null) {
-                        violation.setEnabled(currentViolation.isEnabled());
-                    }
-
-                    return violation;
-                })
+                .compute(new RuleViolationKey(violation), (ruleViolationKey, currentViolation) -> violation)
             );
 
             componentRuleViolations.entrySet().removeIf(keyAndViolation -> {
@@ -83,13 +77,7 @@ public class StandardRuleViolationsManager implements RuleViolationsManager {
 
             newGroupViolations.forEach(newViolation -> subjectIdToRuleViolation
                 .computeIfAbsent(groupIdWithNewViolation, __ -> new ConcurrentHashMap<>())
-                .compute(new RuleViolationKey(newViolation), (ruleViolationKey, currentViolation) -> {
-                    if (currentViolation != null) {
-                        newViolation.setEnabled(currentViolation.isEnabled());
-                    }
-
-                    return newViolation;
-                }));
+                .compute(new RuleViolationKey(newViolation), (ruleViolationKey, currentViolation) -> newViolation));
         });
 
         componentToRuleViolations.forEach((component, componentViolations) -> {
@@ -97,13 +85,7 @@ public class StandardRuleViolationsManager implements RuleViolationsManager {
                 .computeIfAbsent(component.getIdentifier(), __ -> new ConcurrentHashMap<>());
 
             componentViolations.forEach(componentViolation -> componentRuleViolations
-                .compute(new RuleViolationKey(componentViolation), (ruleViolationKey, currentViolation) -> {
-                    if (currentViolation != null) {
-                        componentViolation.setEnabled(currentViolation.isEnabled());
-                    }
-
-                    return componentViolation;
-                })
+                .compute(new RuleViolationKey(componentViolation), (ruleViolationKey, currentViolation) -> componentViolation)
             );
         });
 
@@ -133,13 +115,6 @@ public class StandardRuleViolationsManager implements RuleViolationsManager {
             }));
 
         processGroup.getProcessGroups().forEach(childProcessGroup -> purgeGroupViolations(childProcessGroup));
-    }
-
-    @Override
-    public void updateRuleViolation(String scope, String subjectId, String ruleId, String issueId, boolean enabled) {
-        Optional.ofNullable(subjectIdToRuleViolation.get(subjectId))
-            .map(violationMap -> violationMap.get(new RuleViolationKey(scope, subjectId, ruleId, issueId)))
-            .ifPresent(violation -> violation.setEnabled(enabled));
     }
 
     @Override

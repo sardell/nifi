@@ -60,7 +60,6 @@ import org.apache.nifi.registry.ComponentVariableRegistry;
 import org.apache.nifi.util.CharacterFilterUtils;
 import org.apache.nifi.util.FormatUtils;
 import org.apache.nifi.util.file.classloader.ClassLoaderUtils;
-import org.apache.nifi.validation.RuleViolation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -786,7 +785,6 @@ public abstract class AbstractComponentNode implements ComponentNode {
                 .map(Collection::stream)
                 .ifPresent(ruleViolationStream -> ruleViolationStream
                     .filter(ruleViolation -> ruleViolation.getEnforcementPolicy() == EnforcementPolicy.ENFORCE)
-                    .filter(RuleViolation::isEnabled)
                     .forEach(ruleViolation -> validationResults.add(
                         new ValidationResult.Builder()
                             .subject(getComponent().getClass().getSimpleName())

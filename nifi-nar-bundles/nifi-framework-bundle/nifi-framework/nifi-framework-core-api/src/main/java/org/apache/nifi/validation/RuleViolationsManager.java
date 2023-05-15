@@ -44,17 +44,6 @@ public interface RuleViolationsManager {
     void upsertGroupViolations(VersionedProcessGroup processGroup, Collection<RuleViolation> violations, Map<VersionedComponent, Collection<RuleViolation>> componentToRuleViolations);
 
     /**
-     * Enabled/disable a rule violation
-     *
-     * @param scope     See {@link RuleViolation#getScope()}
-     * @param subjectId See {@link RuleViolation#getSubjectId()}
-     * @param ruleId    See {@link RuleViolation#getRuleId()}
-     * @param issueId   See {@link RuleViolation#getIssueId()}
-     * @param enabled   See {@link RuleViolation#isEnabled()}
-     */
-    void updateRuleViolation(String scope, String subjectId, String ruleId, String issueId, boolean enabled);
-
-    /**
      * Returns rule violations tied to a component or process group with a given id
      *
      * @param subjectId The id of the component or process group

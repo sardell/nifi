@@ -38,7 +38,6 @@ public class RuleViolation {
     private final String violationMessage;
     private final String violationExplanation;
 
-    private boolean enabled;
     private boolean available;
 
     public RuleViolation(
@@ -61,7 +60,6 @@ public class RuleViolation {
         this.issueId = issueId;
         this.violationMessage = violationMessage;
         this.violationExplanation = violationExplanation;
-        this.enabled = true;
         this.available = true;
     }
 
@@ -131,17 +129,6 @@ public class RuleViolation {
     }
 
     /**
-     * @return true if this violation should be in effect, false otherwise
-     */
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
-    }
-
-    /**
      * Used by the framework internally to manage lifecycle
      */
     public boolean isAvailable() {
@@ -164,7 +151,6 @@ public class RuleViolation {
             .add("ruleId='" + ruleId + "'")
             .add("violationMessage='" + violationMessage + "'")
             .add("violationExplanation='" + violationExplanation + "'")
-            .add("enabled=" + enabled)
             .add("available=" + available)
             .toString();
     }
@@ -186,7 +172,6 @@ public class RuleViolation {
             .append(ruleId, that.ruleId)
             .append(violationMessage, that.violationMessage)
             .append(violationExplanation, that.violationExplanation)
-            .append(enabled, that.enabled)
             .append(available, that.available)
             .isEquals();
     }
@@ -202,7 +187,6 @@ public class RuleViolation {
             .append(ruleId)
             .append(violationMessage)
             .append(violationExplanation)
-            .append(enabled)
             .append(available)
             .toHashCode();
     }
