@@ -19,10 +19,8 @@ package org.apache.nifi.flowanalysis;
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.components.state.StateManager;
 import org.apache.nifi.context.PropertyContext;
-import org.apache.nifi.controller.VersionedControllerServiceLookup;
 
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * This interface provides a bridge between the NiFi Framework and a
@@ -44,31 +42,12 @@ public interface FlowAnalysisRuleContext extends PropertyContext {
     Map<PropertyDescriptor, String> getProperties();
 
     /**
-     * @return the {@link VersionedControllerServiceLookup} which can be used to obtain
-     * Versioned Controller Services during flow analysis
-     */
-    VersionedControllerServiceLookup getVersionedControllerServiceLookup();
-
-    /**
      * @return the StateManager that can be used to store and retrieve state for this component
      */
     StateManager getStateManager();
 
     /**
-     * @return <code>true</code> if this instance of NiFi is configured to be part of a cluster, <code>false</code>
-     * if this instance of NiFi is a standalone instance
+     * @return a FlowAnalysisContext that can be used to access flow- or other analysis-related information
      */
-    boolean isClustered();
-
-    /**
-     * @return the currently configured maximum number of threads that can be
-     * used for executing processors at any given time.
-     */
-    int getMaxTimerDrivenThreadCount();
-
-    /**
-     * @return an Optional with the ID of this node in the cluster, or empty if either this node is not clustered or the Node Identifier
-     * has not yet been established
-     */
-    Optional<String> getClusterNodeIdentifier();
+    FlowAnalysisContext getFlowAnalysisContext();
 }

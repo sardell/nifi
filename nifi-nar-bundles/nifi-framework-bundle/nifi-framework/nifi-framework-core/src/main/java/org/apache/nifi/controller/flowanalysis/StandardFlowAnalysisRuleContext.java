@@ -16,28 +16,20 @@
  */
 package org.apache.nifi.controller.flowanalysis;
 
-import org.apache.nifi.cluster.protocol.NodeIdentifier;
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.components.state.StateManager;
 import org.apache.nifi.controller.FlowController;
-import org.apache.nifi.controller.VersionedControllerServiceLookup;
-import org.apache.nifi.controller.service.ControllerServiceNode;
-import org.apache.nifi.controller.service.ControllerServiceProvider;
-import org.apache.nifi.flow.VersionedControllerService;
+import org.apache.nifi.flowanalysis.FlowAnalysisContext;
 import org.apache.nifi.flowanalysis.FlowAnalysisRuleContext;
-import org.apache.nifi.nar.ExtensionManager;
 import org.apache.nifi.parameter.ParameterLookup;
 import org.apache.nifi.registry.VariableRegistry;
-import org.apache.nifi.registry.flow.mapping.NiFiRegistryFlowMapper;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 public class StandardFlowAnalysisRuleContext extends AbstractFlowAnalysisRuleContext implements FlowAnalysisRuleContext {
     private final String ruleName;
     private final FlowController flowController;
+    private final FlowAnalysisContext flowAnalysisContext;
 
     public StandardFlowAnalysisRuleContext(
             final String ruleName,
@@ -50,6 +42,12 @@ public class StandardFlowAnalysisRuleContext extends AbstractFlowAnalysisRuleCon
         super(flowAnalysisRuleNode, properties, flowController.getControllerServiceProvider(), parameterLookup, variableRegistry);
         this.ruleName = ruleName;
         this.flowController = flowController;
+        this.flowAnalysisContext = new StandardFlowAnalysisContext(flowController);
+    }
+
+    @Override
+    public String getRuleName() {
+        return ruleName;
     }
 
     @Override
@@ -58,50 +56,7 @@ public class StandardFlowAnalysisRuleContext extends AbstractFlowAnalysisRuleCon
     }
 
     @Override
-    public boolean isClustered() {
-        return flowController.isConfiguredForClustering();
-    }
-
-    @Override
-    public int getMaxTimerDrivenThreadCount() {
-        return flowController.getMaxTimerDrivenThreadCount();
-    }
-
-    @Override
-    public Optional<String> getClusterNodeIdentifier() {
-        final NodeIdentifier nodeId = flowController.getNodeId();
-
-        final Optional<String> nodeIdOptional = Optional.ofNullable(nodeId)
-                .map(NodeIdentifier::getId);
-
-        return nodeIdOptional;
-    }
-
-    @Override
-    public VersionedControllerServiceLookup getVersionedControllerServiceLookup() {
-        VersionedControllerServiceLookup versionedControllerServiceLookup = id -> {
-            ControllerServiceProvider controllerServiceProvider = flowController.getControllerServiceProvider();
-            ExtensionManager extensionManager = flowController.getExtensionManager();
-
-            NiFiRegistryFlowMapper mapper = FlowAnalysisUtil.createMapper(extensionManager);
-
-            ControllerServiceNode controllerServiceNode = controllerServiceProvider.getControllerServiceNode(id);
-
-            VersionedControllerService versionedControllerService = mapper.mapControllerService(
-                controllerServiceNode,
-                controllerServiceProvider,
-                Collections.emptySet(),
-                new HashMap<>()
-            );
-
-            return versionedControllerService;
-        };
-
-        return versionedControllerServiceLookup;
-    }
-
-    @Override
-    public String getRuleName() {
-        return ruleName;
+    public FlowAnalysisContext getFlowAnalysisContext() {
+        return flowAnalysisContext;
     }
 }

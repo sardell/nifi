@@ -830,21 +830,21 @@ public class ExtensionBuilder {
     private FlowAnalysisRuleNode createFlowAnalysisRuleNode(final LoggableComponent<FlowAnalysisRule> flowAnalysisRule, final boolean creationSuccessful) {
         final ComponentVariableRegistry componentVarRegistry = new StandardComponentVariableRegistry(this.variableRegistry);
         final ValidationContextFactory validationContextFactory = createValidationContextFactory(serviceProvider, componentVarRegistry);
-        final FlowAnalysisRuleNode taskNode;
+        final FlowAnalysisRuleNode ruleNode;
         if (creationSuccessful) {
-            taskNode = new StandardFlowAnalysisRuleNode(flowAnalysisRule, identifier, flowController,
+            ruleNode = new StandardFlowAnalysisRuleNode(flowAnalysisRule, identifier, flowController,
                 validationContextFactory, ruleViolationsManager, componentVarRegistry, reloadComponent, extensionManager, validationTrigger);
-            taskNode.setName(taskNode.getFlowAnalysisRule().getClass().getSimpleName());
+            ruleNode.setName(ruleNode.getFlowAnalysisRule().getClass().getSimpleName());
         } else {
             final String simpleClassName = type.contains(".") ? StringUtils.substringAfterLast(type, ".") : type;
             final String componentType = "(Missing) " + simpleClassName;
 
-            taskNode = new StandardFlowAnalysisRuleNode(flowAnalysisRule, identifier, flowController, validationContextFactory, ruleViolationsManager,
+            ruleNode = new StandardFlowAnalysisRuleNode(flowAnalysisRule, identifier, flowController, validationContextFactory, ruleViolationsManager,
                     componentType, type, componentVarRegistry, reloadComponent, extensionManager, validationTrigger, true);
-            taskNode.setName(componentType);
+            ruleNode.setName(componentType);
         }
 
-        return taskNode;
+        return ruleNode;
     }
 
     private LoggableComponent<FlowRegistryClient> createLoggableFlowRegistryClient() throws FlowRepositoryClientInstantiationException {
