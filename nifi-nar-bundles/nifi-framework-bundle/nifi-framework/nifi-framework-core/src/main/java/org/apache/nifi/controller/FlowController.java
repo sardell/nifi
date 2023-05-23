@@ -1220,8 +1220,7 @@ public class FlowController implements ReportingTaskProvider, FlowAnalysisRulePr
             final long millis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start);
             LOG.info("Performed initial validation of all components in {} milliseconds", millis);
 
-            // Trigger flow analysis to occur every 5 minutes.
-            flowAnalysisThreadPool.scheduleWithFixedDelay(new TriggerFlowAnalysisTask(flowManager.getFlowAnalyzer(), rootProcessGroupSupplier), 5, 5, TimeUnit.MINUTES);
+            scheduleBackgroundFlowAnalysis(rootProcessGroupSupplier);
             // Trigger component validation to occur every 5 seconds.
             validationThreadPool.scheduleWithFixedDelay(new TriggerValidationTask(flowManager, validationTrigger), 5, 5, TimeUnit.SECONDS);
 
@@ -1289,6 +1288,21 @@ public class FlowController implements ReportingTaskProvider, FlowAnalysisRulePr
             timerDrivenEngineRef.get().scheduleWithFixedDelay(discoverPythonExtensions, 1, 1, TimeUnit.MINUTES);
         } finally {
             writeLock.unlock("onFlowInitialized");
+        }
+    }
+
+    private void scheduleBackgroundFlowAnalysis(Supplier<VersionedProcessGroup> rootProcessGroupSupplier) {
+        try {
+            final long scheduleMillis = parseDurationPropertyToMillis(NiFiProperties.BACKGROUND_FLOW_ANALYSIS_SCHEDULE);
+
+            flowAnalysisThreadPool.scheduleWithFixedDelay(
+                new TriggerFlowAnalysisTask(flowManager.getFlowAnalyzer(), rootProcessGroupSupplier),
+                scheduleMillis,
+                scheduleMillis,
+                TimeUnit.MILLISECONDS
+            );
+        } catch (Exception e) {
+            LOG.warn("Could not initialize TriggerFlowAnalysisTask.", e);
         }
     }
 
