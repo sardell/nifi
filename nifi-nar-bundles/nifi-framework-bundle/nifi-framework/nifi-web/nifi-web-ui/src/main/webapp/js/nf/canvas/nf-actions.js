@@ -1226,6 +1226,7 @@
          */
         reload: function () {
             nfCanvasUtils.reload();
+            nfNgBridge.injector.get('flowStatusCtrl').reloadFlowPolicies();
         },
 
         /**
