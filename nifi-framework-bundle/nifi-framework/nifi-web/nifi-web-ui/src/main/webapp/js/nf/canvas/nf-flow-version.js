@@ -70,6 +70,8 @@
 
     var serverTimeOffset = null;
 
+    var registryIdentifier, bucketIdentifier, selectedFlow;
+
     var gridOptions = {
         autosizeColsMode: Slick.GridAutosizeColsMode.LegacyForceFit,
         enableTextSelectionOnCells: true,
@@ -489,6 +491,11 @@
             return nfCommon.escapeHtml(value);
         };
 
+        var versionFormatter = function () {
+            var markup = '';
+            return markup += '<i class="pointer fa fa-gear" id="view-flow-diff" title="View Flow Version Diff"></i>';
+        }
+
         var timestampFormatter = function (row, cell, value, columnDef, dataContext) {
             // get the current user time to properly convert the server time
             var now = new Date();
@@ -503,6 +510,15 @@
 
         // define the column model for flow versions
         var importFlowVersionColumns = [
+            {
+                id: 'actions',
+                name: '&nbsp;',
+                formatter: versionFormatter,
+                sortable: false,
+                resizable: false,
+                width: 75,
+                maxWidth: 75
+            },
             {
                 id: 'version',
                 name: 'Version',
@@ -581,6 +597,129 @@
 
         // hold onto an instance of the grid
         importFlowVersionTable.data('gridInstance', importFlowVersionGrid);
+    };
+
+    var initFlowDiffTable = function (res) {
+        var flowChangesTable = $('#show-flow-changes-table');
+
+        var valueFormatter = function (row, cell, value, columnDef, dataContext) {
+            return nfCommon.escapeHtml(value);
+        };
+
+        // var versionFormatter = function () {
+        //     var markup = '';
+        //     return markup += '<i class="pointer fa fa-gear" id="view-flow-diff" title="View Flow Version Diff"></i>';
+        // }
+
+        // var timestampFormatter = function (row, cell, value, columnDef, dataContext) {
+        //     // get the current user time to properly convert the server time
+        //     var now = new Date();
+
+        //     // convert the user offset to millis
+        //     var userTimeOffset = now.getTimezoneOffset() * 60 * 1000;
+
+        //     // create the proper date by adjusting by the offsets
+        //     var date = new Date(dataContext.timestamp + userTimeOffset + serverTimeOffset);
+        //     return nfCommon.formatDateTime(date);
+        // };
+
+        // define the column model for flow versions
+        var flowChangesColumns = [
+            {
+                id: 'componentName',
+                name: 'Component Name',
+                field: 'componentName',
+                formatter: valueFormatter,
+                sortable: true,
+                resizable: true,
+                width: 175,
+                maxWidth: 175
+            },
+            {
+                id: 'differenceType',
+                name: 'Change Type',
+                field: 'differenceType',
+                formatter: valueFormatter,
+                sortable: true,
+                resizable: true,
+                width: 175,
+                maxWidth: 175
+            },
+            {
+                id: 'difference',
+                name: 'Difference',
+                field: 'difference',
+                sortable: true,
+                resizable: true,
+                formatter: valueFormatter
+            }
+        ];
+
+        // initialize the dataview
+        var flowChangesData = new Slick.Data.DataView({
+            inlineFilters: false
+        });
+
+        // initialize the sort
+        sort({
+            columnId: 'componentName',
+            sortAsc: false
+        }, flowChangesData);
+
+        // initialize the grid
+        var flowChangesGrid = new Slick.Grid(flowChangesTable, flowChangesData, flowChangesColumns, gridOptions);
+        flowChangesGrid.setSelectionModel(new Slick.RowSelectionModel());
+        flowChangesGrid.registerPlugin(new Slick.AutoTooltips());
+        // flowChangesGrid.setSortColumn('version', false);
+        // flowChangesGrid.onSort.subscribe(function (e, args) {
+        //     sort({
+        //         columnId: args.sortCol.id,
+        //         sortAsc: args.sortAsc
+        //     }, importFlowVersionData);
+        // });
+        // flowChangesGrid.onSelectedRowsChanged.subscribe(function (e, args) {
+        //     $('#import-flow-version-dialog').modal('refreshButtons');
+        // });
+        // flowChangesGrid.onDblClick.subscribe(function (e, args) {
+        //     if ($('#import-flow-version-label').is(':visible')) {
+        //         changeFlowVersion();
+        //     } else {
+        //         importFlowVersion().always(function () {
+        //             $('#import-flow-version-dialog').modal('hide');
+        //         });
+        //     }
+        // });
+
+        // wire up the dataview to the grid
+        flowChangesData.onRowCountChanged.subscribe(function (e, args) {
+            flowChangesGrid.updateRowCount();
+            flowChangesGrid.render();
+        });
+        flowChangesData.onRowsChanged.subscribe(function (e, args) {
+            flowChangesGrid.invalidateRows(args.rows);
+            flowChangesGrid.render();
+        });
+        flowChangesData.syncGridSelection(flowChangesGrid, true);
+
+        // hold onto an instance of the grid
+        flowChangesTable.data('gridInstance', flowChangesGrid);
+
+        var formattedChanges = [];
+        res.componentDifferences.forEach(function (component) {
+            var index = 0;
+            component.differences.forEach(function (difference) {
+                var newObj = {
+                    id: index,
+                    componentName: component.componentName,
+                    differenceType: difference.differenceType,
+                    difference: difference.difference
+                };
+                index++;
+                formattedChanges.push(newObj);
+            });
+        });
+
+        flowChangesData.setItems(formattedChanges);
     };
 
     /**
@@ -845,6 +984,39 @@
             // hide the new process group dialog
             $('#new-process-group-dialog').modal('hide');
         });
+    };
+
+    /**
+     * Loads details for a specified flow.
+     *
+     * @param registryIdentifier
+     * @param bucketIdentifier
+     * @param flowIdentifier
+     */
+
+    var loadDiffDetails = function (registryIdentifier, bucketIdentifier, flowIdentifier, versionA, versionB) {
+        return $.ajax({
+            type: 'GET',
+            url: '../nifi-api/flow/registries/' + encodeURIComponent(registryIdentifier) + '/buckets/' + encodeURIComponent(bucketIdentifier) + '/flows/' + encodeURIComponent(flowIdentifier) + '/diff/' + encodeURIComponent(versionA) + '/' + encodeURIComponent(versionB),
+            dataType: 'json'
+        }).done(function (response) {
+            console.log(response);
+            initFlowDiffTable(response);
+            // var flowVersionDetailsEl = $('#import-flow-version-details');
+            // var flowDescriptionContainerEl = $('#import-flow-description-container');
+            // if (response.versionedFlow.description) {
+            //     flowVersionDetailsEl.text(response.versionedFlow.description);
+            //     // show borders if appropriate
+            //     if (flowVersionDetailsEl.get(0).scrollHeight > Math.round(flowDescriptionContainerEl.innerHeight())) {
+            //         flowDescriptionContainerEl.css('border-width', '1px');
+            //     } else {
+            //         flowDescriptionContainerEl.css('border-width', '0');
+            //     }
+            // } else {
+            //     flowVersionDetailsEl.text('No description provided.');
+            //     flowDescriptionContainerEl.css('border-width', '0');
+            // }
+        }).fail(nfErrorHandler.handleAjaxError);
     };
 
     /**
@@ -1803,6 +1975,27 @@
                 }
             });
 
+            // init flow diff dialog
+            $('#show-flow-changes-dialog').modal({
+                scrollableContentStyle: 'scrollable',
+                headerText: 'Flow Diff',
+                buttons: [{
+                    buttonText: 'Cancel',
+                    color: {
+                        base: '#E3E8EB',
+                        hover: '#C7D2D7',
+                        text: '#004849'
+                    },
+                    handler: {
+                        click: function () {
+                            $(this).modal('hide');
+                        }
+                    }
+                }]
+            }).modal('hide');
+
+            // initFlowDiffTable(#(''))
+
             // initialize the import flow version table
             initImportFlowVersionTable();
             initLocalChangesTable($('#revert-local-changes-table'), $('#revert-local-changes-filter'), $('#displayed-revert-local-changes-entries'), $('#total-revert-local-changes-entries'));
@@ -1953,6 +2146,32 @@
 
                             deferred.reject();
                         });
+
+                        var importFlowVersionGrid = $('#import-flow-version-table').data('gridInstance');
+                        // configure a click listener
+                        importFlowVersionGrid.onClick.subscribe(function (e, args) {
+                            var localChangesData = importFlowVersionGrid.getData();
+                            e.preventDefault();
+                            e.stopPropagation();
+                            var target = $(e.target);
+
+                            // get the node at this row
+                            var componentDifference = localChangesData.getItem(args.row);
+
+                            // determine the desired action
+                            if (importFlowVersionGrid.getColumns()[args.cell].id === 'actions') {
+                                if (target.is("#view-flow-diff")) {
+                                    $('#import-flow-version-dialog').modal('hide');
+                                    $('#show-flow-changes-dialog').modal('show');
+                                    loadDiffDetails(versionControlInformation.registryId, versionControlInformation.bucketId, versionControlInformation.flowId, versionControlInformation.version, componentDifference.version).done(function () {
+
+                                    });
+
+                                    console.log('is diff button clicked')
+                                }
+                            }
+                        });
+
                     } else {
                         nfDialog.showOkDialog({
                             headerText: 'Change Version',
