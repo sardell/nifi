@@ -457,3 +457,8 @@ div.fetch-parameters-step {
     background-color: transparent;
     float: right;
 }
+
+.show-flow-changes-table {
+    height: 300px;
+    overflow-y: scroll;
+}
