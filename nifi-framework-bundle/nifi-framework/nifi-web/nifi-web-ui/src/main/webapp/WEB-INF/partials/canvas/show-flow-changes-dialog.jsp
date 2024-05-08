@@ -17,17 +17,22 @@
 <%@ page contentType="text/html" pageEncoding="UTF-8" session="false" %>
 <div id="show-flow-changes-dialog" layout="column" class="hidden large-dialog">
     <div class="dialog-content">
+        <div id="show-flow-changes-empty-message">No differences to display.</div>
         <div class="setting flow-changes-message">
             <span id="show-flow-changes-message"></span>
         </div>
         <div id="show-flow-changes-filter-controls">
-            <div id="show-flow-changes-filter-status" class="filter-status">
-                Displaying&nbsp;<span id="displayed-show-flow-changes-entries"></span>&nbsp;of&nbsp;<span id="total-show-flow-changes-entries"></span>
-            </div>
             <div id="show-flow-changes-filter-container">
-                <input type="text" id="show-flow-changes-filter" placeholder="Filter"/>
+                <input type="text" id="show-flow-changes-filter" class="show-flow-changes-filter" placeholder="Filter"/>
+            </div>
+            <div class="editable setting-field show-flow-changes-current-version-combo-container">
+                <div id="show-flow-changes-current-version-combo" class="show-flow-changes-current-version-combo"></div>
+            </div>
+            <div class="editable setting-field show-flow-changes-selected-version-combo-container">
+                <div id="show-flow-changes-selected-version-combo" class="show-flow-changes-selected-version-combo"></div>
             </div>
         </div>
         <div id="show-flow-changes-table" class="show-flow-changes-table"></div>
+        
     </div>
 </div>
