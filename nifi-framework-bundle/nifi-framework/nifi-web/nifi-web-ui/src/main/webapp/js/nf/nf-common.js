@@ -1106,9 +1106,23 @@
          */
         isSensitiveProperty: function (propertyDescriptor) {
             if (nfCommon.isDefinedAndNotNull(propertyDescriptor)) {
-                return propertyDescriptor.sensitive === true;
+                return propertyDescriptor.sensitive === true;    // changeisSensitiveProperty
             } else {
                 return false;
+            }
+        },
+
+        /**
+         * Returns display text to show in the ui for sensitive property values
+         *
+         * @argument {string} rawValue         The property raw value
+         * @argument {string} obscuredValue    The property obscured text or description
+         */
+        getSensitiveDisplayValue: function (rawValue, obscuredValue) {
+            if (/^\s*#\{.*}\s*$/.test(rawValue)) {
+                return rawValue;
+            } else {
+                return obscuredValue;   // For debugging obscuredValue + ':' + rawValue;
             }
         },
 

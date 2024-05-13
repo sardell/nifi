@@ -391,7 +391,7 @@
                 // determine the value to use when populating the text field
                 if (nfCommon.isDefinedAndNotNull(item[args.column.field])) {
                     if (sensitive) {
-                        initialValue = nfCommon.config.sensitiveText;
+                        initialValue = nfCommon.getSensitiveDisplayValue(item[args.column.field], 'Sensitive value set');  // check out initialValue or previousValue or item[args.column.field]
                     } else {
                         initialValue = item[args.column.field];
                         isEmptyChecked = initialValue === '';
@@ -823,7 +823,7 @@
             var propertyDescriptor = descriptors[property.property];
 
             // ensure we're not dealing with a sensitive property
-            if (!nfCommon.isSensitiveProperty(propertyDescriptor)) {
+            if (!nfCommon.isSensitiveProperty(propertyDescriptor)) {    // changeisSensitiveProperty
 
                 // get details about the location of the cell
                 var cellNode = $(propertyGrid.getCellNode(row, cell));
@@ -1306,7 +1306,7 @@
 
                 // determine if the property is sensitive
                 if (nfCommon.isSensitiveProperty(propertyDescriptor)) {
-                    valueMarkup = '<span class="table-cell sensitive">Sensitive value set</span>';
+                    valueMarkup = '<span class="table-cell sensitive">' + nfCommon.getSensitiveDisplayValue(value, 'Sensitive value set') + '</span>';
                 } else {
                     var resolvedAllowableValue = false;
 
