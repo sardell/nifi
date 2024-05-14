@@ -34,6 +34,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * An immutable object for holding information about a type of component
@@ -717,6 +718,16 @@ public final class PropertyDescriptor implements Comparable<PropertyDescriptor> 
 
     public boolean isSensitive() {
         return sensitive;
+    }
+
+    // Pattern to match a parameter reference i.e. "leading_spaces#{anything}trailing_spaces"
+    private static final Pattern PARAMETER_REFERENCE = Pattern.compile("^\\s*#\\{.*}\\s*$");
+
+    public static boolean isDisplayableSensitiveValue(String value) {
+        // If the value is a parameter named reference by itself, then it is safe to display the parameter name.
+        // The parameter name is safe to show to users because the sensitive info is stored in the parameter value.
+        // Do not display an empty string because an empty password might be used by unauthorized person to log into a resource.
+        return value != null && !value.isEmpty() && PARAMETER_REFERENCE.matcher(value).matches();
     }
 
     public boolean isDynamic() {

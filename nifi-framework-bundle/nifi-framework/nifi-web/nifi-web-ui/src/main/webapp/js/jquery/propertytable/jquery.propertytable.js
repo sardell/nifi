@@ -391,7 +391,7 @@
                 // determine the value to use when populating the text field
                 if (nfCommon.isDefinedAndNotNull(item[args.column.field])) {
                     if (sensitive) {
-                        initialValue = nfCommon.getSensitiveDisplayValue(item[args.column.field], 'Sensitive value set');  // check out initialValue or previousValue or item[args.column.field]
+                        initialValue = nfCommon.getSensitiveDisplayValue(item[args.column.field], 'Sensitive value set');
                     } else {
                         initialValue = item[args.column.field];
                         isEmptyChecked = initialValue === '';
