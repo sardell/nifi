@@ -398,6 +398,10 @@ export class PropertyTable implements AfterViewInit, ControlValueAccessor {
         return descriptor.sensitive;
     }
 
+    isParameterRef(rawValue: string): boolean {
+        return /^\s*#\{.*}\s*$/.test(rawValue);
+    }
+
     isNull(value: string): boolean {
         return value == null;
     }

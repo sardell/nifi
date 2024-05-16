@@ -65,7 +65,7 @@
                             } @else {
                                 <ng-container
                                     *ngTemplateOutlet="
-                                        isSensitiveProperty(item.descriptor) ? sensitive : nonSensitive;
+                                        isSensitiveProperty(item.descriptor) && !isParameterRef(item.value) ? sensitive : nonSensitive;
                                         context: { $implicit: resolvePropertyValue(item) }
                                     "></ng-container>
                                 <ng-template #sensitive>
