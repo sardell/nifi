@@ -493,7 +493,7 @@
 
         var versionFormatter = function () {
             var markup = '';
-            return markup += '<i class="pointer fa fa-gear" id="view-flow-diff" title="View Flow Version Diff"></i>';
+            return markup += '<i class="pointer fa fa-code-fork" id="view-flow-diff" title="View Flow Version Diff"></i>';
         }
 
         var timestampFormatter = function (row, cell, value, columnDef, dataContext) {
@@ -2031,7 +2031,7 @@
                 scrollableContentStyle: 'scrollable',
                 headerText: 'Flow Diff',
                 buttons: [{
-                    buttonText: 'Cancel',
+                    buttonText: 'Close',
                     color: {
                         base: '#E3E8EB',
                         hover: '#C7D2D7',
@@ -2043,9 +2043,7 @@
                         }
                     }
                 }]
-            }).modal('hide');
-
-            // initFlowDiffTable(#(''))
+            });
 
             // initialize the import flow version table
             initImportFlowVersionTable();
@@ -2215,7 +2213,7 @@
                             if (importFlowVersionGrid.getColumns()[args.cell].id === 'actions') {
                                 if (target.is("#view-flow-diff")) {
                                     var currentVersion = parseInt($('#import-flow-version-label').text(), 10);
-                                    $('#import-flow-version-dialog').modal('hide');
+                                    // $('#import-flow-version-dialog').modal('hide');
                                     $('#show-flow-changes-dialog').modal('show');
                                     loadDiffDetails(versionControlInformation.registryId, versionControlInformation.bucketId, versionControlInformation.flowId, currentVersion, componentDifference.version).done(function (res) {
                                         initFlowDiffTable(res);
