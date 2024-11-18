@@ -49,6 +49,8 @@ import {
     loadProcessorSuccess,
     loadRemoteProcessGroupSuccess,
     navigateWithoutTransform,
+    openFlowDiffDialog,
+    openFlowDiffDialogRequest,
     pasteSuccess,
     pollChangeVersionSuccess,
     pollRevertChangesSuccess,
@@ -89,6 +91,7 @@ import {
 import { ComponentEntity, FlowState } from './index';
 import { ComponentType } from 'libs/shared/src';
 import { produce } from 'immer';
+import { state } from '@angular/animations';
 
 export const initialState: FlowState = {
     id: 'root',
@@ -637,7 +640,9 @@ export const flowReducer = createReducer(
     on(changeVersionComplete, revertChangesComplete, (state) => ({
         ...state,
         changeVersionRequest: null
-    }))
+    })),
+    on(openFlowDiffDialogRequest, (state) => state),
+    on(openFlowDiffDialog, (state) => state)
 );
 
 function getComponentCollection(draftState: FlowState, componentType: ComponentType): any[] | null {

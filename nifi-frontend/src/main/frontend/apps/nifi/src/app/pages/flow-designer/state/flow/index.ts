@@ -197,6 +197,7 @@ export interface OpenChangeVersionDialogRequest {
 export interface ChangeVersionDialogRequest {
     processGroupId: string;
     revision: Revision;
+    registryClients: RegistryClientEntity[];
     versionControlInformation: VersionControlInformation;
     versions: VersionedFlowSnapshotMetadataEntity[];
 }
@@ -846,6 +847,22 @@ export interface LocalChangesDialogRequest {
     versionControlInformation: VersionControlInformationEntity;
     localModifications: FlowComparisonEntity;
     mode: 'SHOW' | 'REVERT';
+}
+
+export interface FlowDiffComponent {
+    componentId: string;
+    componentName: string;
+    componentType: ComponentType;
+    differences: FlowDiffComponentDifference[];
+}
+
+export interface FlowDiffComponentDifference {
+    difference: string;
+    differenceType: string;
+}
+
+export interface FlowDiffDialogResponse {
+    componentDifferences: FlowDiffComponent[];
 }
 
 export interface DownloadFlowRequest {

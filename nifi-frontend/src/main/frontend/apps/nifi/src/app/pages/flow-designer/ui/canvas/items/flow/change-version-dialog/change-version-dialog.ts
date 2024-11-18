@@ -15,28 +15,73 @@
  * limitations under the License.
  */
 
-import { Component, EventEmitter, Inject, Output } from '@angular/core';
-import { AsyncPipe } from '@angular/common';
-import { MatButton } from '@angular/material/button';
+import { Component, EventEmitter, Inject, Input, OnInit, Output } from '@angular/core';
+import { AsyncPipe, NgForOf, NgIf } from '@angular/common';
+import { MatButton, MatButtonModule } from '@angular/material/button';
 import { MatCell, MatCellDef, MatColumnDef, MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatSortModule, Sort } from '@angular/material/sort';
-import { VersionedFlowSnapshotMetadata } from '../../../../../../../state/shared';
+import {
+    BranchEntity,
+    BucketEntity,
+    RegistryClientEntity,
+    VersionedFlow,
+    VersionedFlowEntity,
+    VersionedFlowSnapshotMetadata,
+    VersionedFlowSnapshotMetadataEntity
+} from '../../../../../../../state/shared';
 import { ChangeVersionDialogRequest, VersionControlInformation } from '../../../../../state/flow';
 import { Store } from '@ngrx/store';
 import { CanvasState } from '../../../../../state';
 import { selectTimeOffset } from '../../../../../../../state/flow-configuration/flow-configuration.selectors';
-import { NiFiCommon, CloseOnEscapeDialog } from '@nifi/shared';
+import { NiFiCommon, CloseOnEscapeDialog, NifiTooltipDirective, SelectOption, TextTip } from '@nifi/shared';
+import { MatMenuModule } from '@angular/material/menu';
+import { openFlowDiffDialogRequest } from '../../../../../state/flow/flow.actions';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
+import { Observable, of, take } from 'rxjs';
+import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { ErrorBanner } from '../../../../../../../ui/common/error-banner/error-banner.component';
+import { MatOptionModule } from '@angular/material/core';
 
 @Component({
     selector: 'change-version-dialog',
     standalone: true,
-    imports: [AsyncPipe, MatButton, MatCell, MatCellDef, MatColumnDef, MatDialogModule, MatSortModule, MatTableModule],
+    imports: [
+        AsyncPipe,
+        MatCell,
+        MatCellDef,
+        MatColumnDef,
+        MatDialogModule,
+        MatSortModule,
+        MatTableModule,
+        MatMenuModule,
+        ErrorBanner,
+        MatButtonModule,
+        MatFormFieldModule,
+        NgIf,
+        ReactiveFormsModule,
+        MatOptionModule,
+        MatSelectModule,
+        NgForOf,
+        NifiTooltipDirective,
+        MatCheckboxModule
+    ],
     templateUrl: './change-version-dialog.html',
     styleUrl: './change-version-dialog.scss'
 })
-export class ChangeVersionDialog extends CloseOnEscapeDialog {
-    displayedColumns: string[] = ['version', 'created', 'comments'];
+export class ChangeVersionDialog extends CloseOnEscapeDialog implements OnInit {
+    @Input() getBranches: (registryId: string) => Observable<BranchEntity[]> = () => of([]);
+    @Input() getBuckets!: (registryId: string, branch?: string) => Observable<BucketEntity[]>;
+    @Input() getFlows!: (registryId: string, bucketId: string, branch?: string) => Observable<VersionedFlowEntity[]>;
+    @Input() getFlowVersions!: (
+        registryId: string,
+        bucketId: string,
+        flowId: string,
+        branch?: string
+    ) => Observable<VersionedFlowSnapshotMetadataEntity[]>;
+    displayedColumns: string[] = ['version', 'created', 'comments', 'actions'];
     dataSource: MatTableDataSource<VersionedFlowSnapshotMetadata> =
         new MatTableDataSource<VersionedFlowSnapshotMetadata>();
     selectedFlowVersion: VersionedFlowSnapshotMetadata | null = null;
@@ -45,13 +90,26 @@ export class ChangeVersionDialog extends CloseOnEscapeDialog {
         direction: 'desc'
     };
     versionControlInformation: VersionControlInformation;
+    supportsBranching = false;
+    registryClientOptions: SelectOption[] = [];
+    changeVersionForm: FormGroup;
+    branchOptions: SelectOption[] = [];
+    bucketOptions: SelectOption[] = [];
+    flowOptions: SelectOption[] = [];
+
+    selectedFlowDescription: string | undefined;
+    flowLookup: Map<string, VersionedFlow> = new Map<string, VersionedFlow>();
+
+    private clientBranchingSupportMap: Map<string, boolean> = new Map<string, boolean>();
     private timeOffset = this.store.selectSignal(selectTimeOffset);
+    protected readonly TextTip = TextTip;
 
     @Output() changeVersion: EventEmitter<VersionedFlowSnapshotMetadata> =
         new EventEmitter<VersionedFlowSnapshotMetadata>();
 
     constructor(
         @Inject(MAT_DIALOG_DATA) private dialogRequest: ChangeVersionDialogRequest,
+        private formBuilder: FormBuilder,
         private nifiCommon: NiFiCommon,
         private store: Store<CanvasState>
     ) {
@@ -61,6 +119,39 @@ export class ChangeVersionDialog extends CloseOnEscapeDialog {
         this.selectedFlowVersion = sortedFlowVersions[0];
         this.dataSource.data = sortedFlowVersions;
         this.versionControlInformation = dialogRequest.versionControlInformation;
+
+        const sortedRegistries = dialogRequest.registryClients.slice().sort((a, b) => {
+            return this.nifiCommon.compareString(a.component.name, b.component.name);
+        });
+
+        sortedRegistries.forEach((registryClient: RegistryClientEntity) => {
+            if (registryClient.permissions.canRead) {
+                this.registryClientOptions.push({
+                    text: registryClient.component.name,
+                    value: registryClient.id,
+                    description: registryClient.component.description
+                });
+            }
+            this.clientBranchingSupportMap.set(registryClient.id, registryClient.component.supportsBranching);
+        });
+        this.changeVersionForm = this.formBuilder.group({
+            branch: new FormControl('main', Validators.required),
+            bucket: new FormControl(null, Validators.required),
+            flow: new FormControl(null, Validators.required)
+        });
+    }
+
+    ngOnInit(): void {
+        const selectedRegistryId = this.versionControlInformation.registryId;
+
+        if (selectedRegistryId) {
+            this.supportsBranching = this.clientBranchingSupportMap.get(selectedRegistryId) || false;
+            if (this.supportsBranching) {
+                this.loadBranches(selectedRegistryId);
+            } else {
+                this.loadBuckets(selectedRegistryId);
+            }
+        }
     }
 
     sortData(sort: Sort) {
@@ -136,5 +227,149 @@ export class ChangeVersionDialog extends CloseOnEscapeDialog {
             return false;
         }
         return this.selectedFlowVersion.version !== this.versionControlInformation.version;
+    }
+
+    viewFlowDiff(item: VersionedFlowSnapshotMetadata) {
+        // get version data in common format
+        const selectedVersion = this.dataSource.data.find((d) => d.version === item.version)!;
+        // pass current version registry ID
+        this.store.dispatch(
+            openFlowDiffDialogRequest({
+                request: {
+                    currentVersion: this.versionControlInformation,
+                    selectedVersion: selectedVersion
+                }
+            })
+        );
+    }
+
+    branchChanged(branch: string): void {
+        this.clearBuckets();
+        const registryId = this.versionControlInformation.registryId;
+        this.loadBuckets(registryId, branch);
+    }
+
+    private clearBuckets(): void {
+        this.bucketOptions = [];
+        this.changeVersionForm.get('bucket')?.setValue(null);
+        this.clearFlows();
+    }
+
+    bucketChanged(bucketId: string): void {
+        this.clearFlows();
+        const registryId = this.versionControlInformation.registryId;
+        const branch = this.changeVersionForm.get('branch')?.value;
+        this.loadFlows(registryId, bucketId, branch);
+    }
+
+    private clearFlows() {
+        this.changeVersionForm.get('flow')?.setValue(null);
+        this.flowOptions = [];
+        this.dataSource.data = [];
+    }
+
+    flowChanged(flowId: string): void {
+        const registryId = this.versionControlInformation.registryId;
+        const bucketId = this.changeVersionForm.get('bucket')?.value;
+        const branch = this.changeVersionForm.get('branch')?.value;
+        this.loadVersions(registryId, bucketId, flowId, branch);
+    }
+
+    loadBranches(registryId: string): void {
+        if (registryId) {
+            this.branchOptions = [];
+
+            this.getBranches(registryId)
+                .pipe(take(1))
+                .subscribe((branches: BranchEntity[]) => {
+                    if (branches.length > 0) {
+                        branches.forEach((entity: BranchEntity) => {
+                            this.branchOptions.push({
+                                text: entity.branch.name,
+                                value: entity.branch.name
+                            });
+                        });
+
+                        const branchId = this.branchOptions[0].value;
+                        if (branchId) {
+                            this.changeVersionForm.get('branch')?.setValue(branchId);
+                            this.loadBuckets(registryId, branchId);
+                        }
+                    }
+                });
+        }
+    }
+
+    loadBuckets(registryId: string, branch?: string): void {
+        this.bucketOptions = [];
+
+        this.getBuckets(registryId, branch)
+            .pipe(take(1))
+            .subscribe((buckets: BucketEntity[]) => {
+                if (buckets.length > 0) {
+                    buckets.forEach((entity: BucketEntity) => {
+                        if (entity.permissions.canRead) {
+                            this.bucketOptions.push({
+                                text: entity.bucket.name,
+                                value: entity.id,
+                                description: entity.bucket.description
+                            });
+                        }
+                    });
+
+                    const bucketId = this.bucketOptions[0].value;
+                    if (bucketId) {
+                        this.changeVersionForm.get('bucket')?.setValue(bucketId);
+                        this.loadFlows(registryId, bucketId, branch);
+                    }
+                }
+            });
+    }
+
+    loadFlows(registryId: string, bucketId: string, branch?: string): void {
+        this.flowOptions = [];
+        this.flowLookup.clear();
+
+        this.getFlows(registryId, bucketId, branch)
+            .pipe(take(1))
+            .subscribe((versionedFlows: VersionedFlowEntity[]) => {
+                if (versionedFlows.length > 0) {
+                    versionedFlows.forEach((entity: VersionedFlowEntity) => {
+                        this.flowLookup.set(entity.versionedFlow.flowId!, entity.versionedFlow);
+
+                        this.flowOptions.push({
+                            text: entity.versionedFlow.flowName,
+                            value: entity.versionedFlow.flowId!,
+                            description: entity.versionedFlow.description
+                        });
+                    });
+
+                    const flowId = this.flowOptions[0].value;
+                    if (flowId) {
+                        this.changeVersionForm.get('flow')?.setValue(flowId);
+                        this.loadVersions(registryId, bucketId, flowId, branch);
+                    }
+                }
+            });
+    }
+
+    loadVersions(registryId: string, bucketId: string, flowId: string, branch?: string): void {
+        this.dataSource.data = [];
+        this.selectedFlowDescription = this.flowLookup.get(flowId)?.description;
+
+        this.getFlowVersions(registryId, bucketId, flowId, branch)
+            .pipe(take(1))
+            .subscribe((metadataEntities: VersionedFlowSnapshotMetadataEntity[]) => {
+                if (metadataEntities.length > 0) {
+                    const flowVersions = metadataEntities.map(
+                        (entity: VersionedFlowSnapshotMetadataEntity) => entity.versionedFlowSnapshotMetadata
+                    );
+
+                    const sortedFlowVersions = this.sortVersions(flowVersions, this.sort);
+                    this.selectedFlowVersion = sortedFlowVersions[0];
+
+                    this.dataSource.data = sortedFlowVersions;
+                }
+            });
     }
 }

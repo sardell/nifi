@@ -50,6 +50,7 @@ import {
     EnableProcessGroupRequest,
     EnableProcessGroupResponse,
     EnterProcessGroupRequest,
+    FlowDiffDialogResponse,
     FlowUpdateRequestEntity,
     GoToRemoteProcessGroupRequest,
     GroupComponentsDialogRequest,
@@ -109,10 +110,11 @@ import {
     UpdateProcessorRequest,
     UpdateProcessorResponse,
     UploadProcessGroupRequest,
+    VersionControlInformation,
     VersionControlInformationEntity
 } from './index';
 import { StatusHistoryRequest } from '../../../../state/status-history';
-import { FetchComponentVersionsRequest } from '../../../../state/shared';
+import { FetchComponentVersionsRequest, VersionedFlowSnapshotMetadata } from '../../../../state/shared';
 import { ErrorContext } from '../../../../state/error';
 
 const CANVAS_PREFIX = '[Canvas]';
@@ -883,4 +885,14 @@ export const openChangeProcessorVersionDialog = createAction(
 export const openChangeColorDialog = createAction(
     `${CANVAS_PREFIX} Open Change Color Dialog`,
     props<{ request: ChangeColorRequest[] }>()
+);
+
+export const openFlowDiffDialogRequest = createAction(
+    `${CANVAS_PREFIX} Open Flow Diff Dialog Request`,
+    props<{ request: { currentVersion: VersionControlInformation; selectedVersion: VersionedFlowSnapshotMetadata } }>()
+);
+
+export const openFlowDiffDialog = createAction(
+    `${CANVAS_PREFIX} Open Flow Diff Dialog`,
+    props<{ request: FlowDiffDialogResponse }>()
 );

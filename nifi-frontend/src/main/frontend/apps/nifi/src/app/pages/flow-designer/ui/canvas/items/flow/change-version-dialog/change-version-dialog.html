@@ -19,110 +19,200 @@
     Change Version <span class="font-light">({{ versionControlInformation.version }})</span>
 </h2>
 <div class="change-version">
-    <mat-dialog-content>
-        <div class="dialog-content flex flex-col gap-y-4 w-full">
-            <div class="flex flex-row w-full">
-                <div class="w-1/2 pr-2 flex flex-col gap-y-4">
-                    <div>
-                        <div>Registry</div>
-                        <div
-                            class="tertiary-color font-medium overflow-ellipsis overflow-hidden whitespace-nowrap"
-                            [title]="versionControlInformation.registryName">
-                            {{ versionControlInformation.registryName }}
-                        </div>
-                    </div>
-                    <div>
-                        <div>Bucket</div>
-                        <div
-                            class="tertiary-color font-medium overflow-ellipsis overflow-hidden whitespace-nowrap"
-                            [title]="versionControlInformation.bucketName">
-                            {{ versionControlInformation.bucketName }}
-                        </div>
-                    </div>
-                </div>
-                <div class="w-1/2 pl-2 flex flex-col gap-y-4">
-                    <div>
-                        @if (versionControlInformation.branch) {
-                            <div>Branch</div>
+    <form class="change-version-form" [formGroup]="changeVersionForm">
+        <error-banner></error-banner>
+        <mat-dialog-content>
+            <div class="dialog-content flex flex-col gap-y-4 w-full">
+                <div class="flex flex-row w-full">
+                    <div class="w-1/2 pr-2 flex flex-col">
+                        <div class="mb-4">
+                            <div>Registry</div>
                             <div
                                 class="tertiary-color font-medium overflow-ellipsis overflow-hidden whitespace-nowrap"
-                                [title]="versionControlInformation.branch">
-                                {{ versionControlInformation.branch }}
+                                [title]="versionControlInformation.registryName">
+                                {{ versionControlInformation.registryName }}
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <div>Bucket</div>
+                            <div
+                                class="tertiary-color font-medium overflow-ellipsis overflow-hidden whitespace-nowrap"
+                                [title]="versionControlInformation.bucketName">
+                                {{ versionControlInformation.bucketName }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-1/2 pl-2 flex flex-col">
+                        @if (versionControlInformation.branch) {
+                                <div class="mb-4">
+                                <div>Branch</div>
+                                <div
+                                    class="tertiary-color font-medium overflow-ellipsis overflow-hidden whitespace-nowrap"
+                                    [title]="versionControlInformation.branch">
+                                    {{ versionControlInformation.branch }}
+                                </div>
                             </div>
                         }
+                        <div class="mb-4">
+                            <div>Flow Name</div>
+                            <div
+                                class="tertiary-color font-medium overflow-ellipsis overflow-hidden whitespace-nowrap"
+                                [title]="versionControlInformation.flowName">
+                                {{ versionControlInformation.flowName }}
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <div>Flow Name</div>
-                        <div
-                            class="tertiary-color font-medium overflow-ellipsis overflow-hidden whitespace-nowrap"
-                            [title]="versionControlInformation.flowName">
-                            {{ versionControlInformation.flowName }}
+                    <div class="w-1/2 pl-2 flex flex-col mb-4">
+                        <div>Flow Description</div>
+                        <div class="tertiary-color font-medium break-words">
+                            {{ versionControlInformation.flowDescription || 'No description provided' }}
                         </div>
                     </div>
                 </div>
-            </div>
-            <div>
-                <div>Flow Description</div>
-                <div class="tertiary-color font-medium break-words">
-                    {{ versionControlInformation.flowDescription || 'No description provided' }}
+
+                <div class="flex flex-col">
+                    <h3>Versions Source</h3>
+                    <div>
+
+                        @if (supportsBranching) {
+                            <mat-form-field>
+                                <mat-label>Branch</mat-label>
+                                <mat-select formControlName="branch" (selectionChange)="branchChanged($event.value)">
+                                    <ng-container *ngFor="let option of branchOptions">
+                                        <mat-option [value]="option.value">{{ option.text }}</mat-option>
+                                    </ng-container>
+                                </mat-select>
+                                @if (changeVersionForm.controls['branch'].hasError('required')) {
+                                    <mat-error>No branches available</mat-error>
+                                }
+                            </mat-form-field>
+                        }
+
+                        <mat-form-field>
+                            <mat-label>Bucket</mat-label>
+                            <mat-select formControlName="bucket" (selectionChange)="bucketChanged($event.value)">
+                                <ng-container *ngFor="let option of bucketOptions">
+                                    <ng-container *ngIf="option.description; else noDescription">
+                                        <mat-option
+                                            [value]="option.value"
+                                            nifiTooltip
+                                            [tooltipComponentType]="TextTip"
+                                            [tooltipInputData]="option.description"
+                                            [delayClose]="false"
+                                            >{{ option.text }}</mat-option
+                                        >
+                                    </ng-container>
+                                    <ng-template #noDescription>
+                                        <mat-option [value]="option.value">{{ option.text }}</mat-option>
+                                    </ng-template>
+                                </ng-container>
+                            </mat-select>
+                            <mat-error *ngIf="changeVersionForm.controls['bucket'].hasError('required')"
+                                >No buckets available</mat-error
+                            >
+                        </mat-form-field>
+                        <mat-form-field>
+                            <mat-label>Flow</mat-label>
+                            <mat-select formControlName="flow" (selectionChange)="flowChanged($event.value)">
+                                <ng-container *ngFor="let option of flowOptions">
+                                    <ng-container *ngIf="option.description; else noDescription">
+                                        <mat-option
+                                            [value]="option.value"
+                                            nifiTooltip
+                                            [tooltipComponentType]="TextTip"
+                                            [tooltipInputData]="option.description"
+                                            [delayClose]="false"
+                                            >{{ option.text }}</mat-option
+                                        >
+                                    </ng-container>
+                                    <ng-template #noDescription>
+                                        <mat-option [value]="option.value">{{ option.text }}</mat-option>
+                                    </ng-template>
+                                </ng-container>
+                            </mat-select>
+                            <mat-error *ngIf="changeVersionForm.controls['flow'].hasError('required')"
+                                >No flows available</mat-error
+                            >
+                        </mat-form-field>
+                    </div>
+                </div>
+
+                <div class="listing-table flex-1 relative">
+                    <div class="absolute inset-0 overflow-y-auto overflow-x-hidden">
+                        <table
+                            mat-table
+                            [dataSource]="dataSource"
+                            matSort
+                            matSortDisableClear
+                            (matSortChange)="sortData($event)"
+                            [matSortActive]="sort.active"
+                            [matSortDirection]="sort.direction">
+                            <!-- Version Column -->
+                            <ng-container matColumnDef="version">
+                                <th mat-header-cell *matHeaderCellDef mat-sort-header>Version</th>
+                                <td mat-cell *matCellDef="let item">
+                                    <div class="overflow-ellipsis overflow-hidden whitespace-nowrap" [title]="item.version">
+                                        {{ item.version }}
+                                    </div>
+                                </td>
+                            </ng-container>
+
+                            <!-- Create Column -->
+                            <ng-container matColumnDef="created">
+                                <th mat-header-cell *matHeaderCellDef mat-sort-header>Created</th>
+                                <td mat-cell *matCellDef="let item">{{ formatTimestamp(item) }}</td>
+                            </ng-container>
+
+                            <!-- Comments Column -->
+                            <ng-container matColumnDef="comments">
+                                <th mat-header-cell *matHeaderCellDef mat-sort-header>Comments</th>
+                                <td mat-cell *matCellDef="let item">
+                                    <div
+                                        class="overflow-ellipsis overflow-hidden whitespace-nowrap"
+                                        [title]="item.comments">
+                                        {{ item.comments }}
+                                    </div>
+                                </td>
+                            </ng-container>
+
+                            <!-- Actions Column -->
+                            <ng-container matColumnDef="actions">
+                                <th mat-header-cell *matHeaderCellDef></th>
+                                <td mat-cell *matCellDef="let item">
+                                    <button
+                                        mat-icon-button
+                                        type="button"
+                                        [matMenuTriggerFor]="actionMenu"
+                                        class="h-8 w-8 flex items-center justify-center icon global-menu">
+                                        <i class="fa fa-ellipsis-v"></i>
+                                    </button>
+                                    <mat-menu #actionMenu="matMenu" xPosition="before">
+                                        <button mat-menu-item (click)="viewFlowDiff(item)">
+                                            <i class="fa fa-trash primary-color mr-2"></i>
+                                            View Diff
+                                        </button>
+                                    </mat-menu>
+                                </td>
+                            </ng-container>
+
+                            <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
+                            <tr
+                                mat-row
+                                *matRowDef="let row; let even = even; columns: displayedColumns"
+                                (click)="select(row)"
+                                (dblclick)="changeFlowVersion()"
+                                [class.selected]="isSelected(row)"
+                                [class.even]="even"></tr>
+                        </table>
+                    </div>
                 </div>
             </div>
-
-            <div class="listing-table flex-1 relative">
-                <div class="absolute inset-0 overflow-y-auto overflow-x-hidden">
-                    <table
-                        mat-table
-                        [dataSource]="dataSource"
-                        matSort
-                        matSortDisableClear
-                        (matSortChange)="sortData($event)"
-                        [matSortActive]="sort.active"
-                        [matSortDirection]="sort.direction">
-                        <!-- Version Column -->
-                        <ng-container matColumnDef="version">
-                            <th mat-header-cell *matHeaderCellDef mat-sort-header>Version</th>
-                            <td mat-cell *matCellDef="let item">
-                                <div class="overflow-ellipsis overflow-hidden whitespace-nowrap" [title]="item.version">
-                                    {{ item.version }}
-                                </div>
-                            </td>
-                        </ng-container>
-
-                        <!-- Create Column -->
-                        <ng-container matColumnDef="created">
-                            <th mat-header-cell *matHeaderCellDef mat-sort-header>Created</th>
-                            <td mat-cell *matCellDef="let item">{{ formatTimestamp(item) }}</td>
-                        </ng-container>
-
-                        <!-- Comments Column -->
-                        <ng-container matColumnDef="comments">
-                            <th mat-header-cell *matHeaderCellDef mat-sort-header>Comments</th>
-                            <td mat-cell *matCellDef="let item">
-                                <div
-                                    class="overflow-ellipsis overflow-hidden whitespace-nowrap"
-                                    [title]="item.comments">
-                                    {{ item.comments }}
-                                </div>
-                            </td>
-                        </ng-container>
-
-                        <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky: true"></tr>
-                        <tr
-                            mat-row
-                            *matRowDef="let row; let even = even; columns: displayedColumns"
-                            (click)="select(row)"
-                            (dblclick)="changeFlowVersion()"
-                            [class.selected]="isSelected(row)"
-                            [class.even]="even"></tr>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-        <button mat-button mat-dialog-close>Cancel</button>
-        <button [disabled]="!isSelectionValid()" type="button" (click)="changeFlowVersion()" mat-flat-button>
-            Change
-        </button>
-    </mat-dialog-actions>
+        </mat-dialog-content>
+        <mat-dialog-actions align="end">
+            <button mat-button mat-dialog-close>Cancel</button>
+            <button [disabled]="!isSelectionValid()" type="button" (click)="changeFlowVersion()" mat-flat-button>
+                Change
+            </button>
+        </mat-dialog-actions>
+    </form>
 </div>

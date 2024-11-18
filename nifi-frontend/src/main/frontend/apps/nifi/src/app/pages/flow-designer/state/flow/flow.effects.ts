@@ -17,6 +17,7 @@
 
 import { DestroyRef, inject, Injectable } from '@angular/core';
 import { FlowService } from '../../service/flow.service';
+import { FlowDiffService } from '../../service/flow-diff.service';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { concatLatestFrom } from '@ngrx/operators';
 import * as FlowActions from './flow.actions';
@@ -158,6 +159,7 @@ import { selectDocumentVisibilityState } from '../../../../state/document-visibi
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DocumentVisibility } from '../../../../state/document-visibility';
 import { ErrorContextKey } from '../../../../state/error';
+import { FlowDiffDialogComponent } from '../../ui/canvas/items/flow/flow-diff-dialog/flow-diff-dialog.component';
 
 @Injectable()
 export class FlowEffects {
@@ -169,6 +171,7 @@ export class FlowEffects {
         private store: Store<NiFiState>,
         private storage: Storage,
         private flowService: FlowService,
+        private flowDiffService: FlowDiffService,
         private controllerServiceService: ControllerServiceService,
         private registryService: RegistryService,
         private client: Client,
@@ -3792,17 +3795,19 @@ export class FlowEffects {
             switchMap((versionControlInfo: VersionControlInformationEntity) => {
                 const vci = versionControlInfo.versionControlInformation;
                 if (vci) {
-                    return from(
+                    return combineLatest(
+                        this.registryService.getRegistryClients(),
                         this.registryService.getFlowVersions(vci.registryId, vci.bucketId, vci.flowId, vci.branch)
                     ).pipe(
-                        map((versions) =>
+                        map(([registryClients, versions]) =>
                             FlowActions.openChangeVersionDialog({
                                 request: {
                                     processGroupId: vci.groupId,
                                     revision: versionControlInfo.processGroupRevision,
                                     versionControlInformation: vci,
                                     versions:
-                                        versions.versionedFlowSnapshotMetadataSet as unknown as VersionedFlowSnapshotMetadataEntity[]
+                                        versions.versionedFlowSnapshotMetadataSet as unknown as VersionedFlowSnapshotMetadataEntity[],
+                                    registryClients: registryClients.registries
                                 }
                             })
                         ),
@@ -3817,7 +3822,7 @@ export class FlowEffects {
             })
         )
     );
-
+    //
     openChangeVersionDialog$ = createEffect(
         () =>
             this.actions$.pipe(
@@ -3825,10 +3830,98 @@ export class FlowEffects {
                 map((action) => action.request),
                 tap((request) => {
                     const dialogRef = this.dialog.open(ChangeVersionDialog, {
-                        ...LARGE_DIALOG,
+                        ...XL_DIALOG,
                         data: request,
                         autoFocus: false
                     });
+
+                    dialogRef.componentInstance.getBranches = (registryId: string): Observable<BranchEntity[]> => {
+                        return this.registryService.getBranches(registryId).pipe(
+                            take(1),
+                            map((response) => response.branches),
+                            tap({
+                                error: (errorResponse: HttpErrorResponse) => {
+                                    this.store.dispatch(
+                                        FlowActions.flowBannerError({
+                                            errorContext: {
+                                                context: ErrorContextKey.FLOW_VERSION,
+                                                errors: [this.errorHelper.getErrorString(errorResponse)]
+                                            }
+                                        })
+                                    );
+                                }
+                            })
+                        );
+                    };
+
+                    dialogRef.componentInstance.getBuckets = (
+                        registryId: string,
+                        branch?: string
+                    ): Observable<BucketEntity[]> => {
+                        return this.registryService.getBuckets(registryId, branch).pipe(
+                            take(1),
+                            map((response) => response.buckets),
+                            tap({
+                                error: (errorResponse: HttpErrorResponse) => {
+                                    this.store.dispatch(
+                                        FlowActions.flowBannerError({
+                                            errorContext: {
+                                                context: ErrorContextKey.FLOW_VERSION,
+                                                errors: [this.errorHelper.getErrorString(errorResponse)]
+                                            }
+                                        })
+                                    );
+                                }
+                            })
+                        );
+                    };
+
+                    dialogRef.componentInstance.getFlows = (
+                        registryId: string,
+                        bucketId: string,
+                        branch?: string
+                    ): Observable<VersionedFlowEntity[]> => {
+                        return this.registryService.getFlows(registryId, bucketId, branch).pipe(
+                            take(1),
+                            map((response) => response.versionedFlows),
+                            tap({
+                                error: (errorResponse: HttpErrorResponse) => {
+                                    this.store.dispatch(
+                                        FlowActions.flowBannerError({
+                                            errorContext: {
+                                                context: ErrorContextKey.FLOW_VERSION,
+                                                errors: [this.errorHelper.getErrorString(errorResponse)]
+                                            }
+                                        })
+                                    );
+                                }
+                            })
+                        );
+                    };
+
+                    dialogRef.componentInstance.getFlowVersions = (
+                        registryId: string,
+                        bucketId: string,
+                        flowId: string,
+                        branch?: string
+                    ): Observable<VersionedFlowSnapshotMetadataEntity[]> => {
+                        return this.registryService.getFlowVersions(registryId, bucketId, flowId, branch).pipe(
+                            take(1),
+                            map((response) => response.versionedFlowSnapshotMetadataSet),
+                            tap({
+                                error: (errorResponse: HttpErrorResponse) => {
+                                    this.store.dispatch(
+                                        FlowActions.flowBannerError({
+                                            errorContext: {
+                                                context: ErrorContextKey.FLOW_VERSION,
+                                                errors: [this.errorHelper.getErrorString(errorResponse)]
+                                            }
+                                        })
+                                    );
+                                }
+                            })
+                        );
+                    };
 
                     dialogRef.componentInstance.changeVersion.pipe(take(1)).subscribe((selectedVersion) => {
                         const entity: VersionControlInformationEntity = {
@@ -4016,6 +4109,38 @@ export class FlowEffects {
             tap(() => this.dialog.closeAll()),
             switchMap((request) => of(FlowActions.navigateToComponent({ request })))
         )
+    );
+
+    /////////////////////////////////
+    // Version diff effects
+    /////////////////////////////////
+
+    openFlowDiffDialogRequest$ = createEffect(
+        () =>
+            this.actions$.pipe(
+                ofType(FlowActions.openFlowDiffDialogRequest),
+                map((action) => action.request),
+                switchMap(({ currentVersion, selectedVersion }) =>
+                    from(this.flowDiffService.loadDiffDetails(currentVersion, selectedVersion)).pipe(
+                        tap((res) => {
+                            // FlowActions.openFlowDiffDialog({
+                            //     request: res
+                            // });
+                            const dialogRef = this.dialog.open(FlowDiffDialogComponent, {
+                                ...LARGE_DIALOG,
+                                minWidth: 365,
+                                disableClose: true,
+                                autoFocus: false,
+                                data: res
+                            });
+                        }),
+                        catchError((errorResponse: HttpErrorResponse) =>
+                            of(this.snackBarOrFullScreenError(errorResponse))
+                        )
+                    )
+                )
+            ),
+        { dispatch: false }
     );
 
     /////////////////////////////////
