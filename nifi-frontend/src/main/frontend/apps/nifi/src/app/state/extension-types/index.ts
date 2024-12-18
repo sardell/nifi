@@ -39,6 +39,7 @@ export interface LoadExtensionTypesForPoliciesResponse {
     reportingTaskTypes: DocumentedType[];
     flowAnalysisRuleTypes: DocumentedType[];
     parameterProviderTypes: DocumentedType[];
+    registryClientTypes: DocumentedType[];
 }
 
 export interface LoadExtensionTypesForDocumentationResponse {
@@ -47,6 +48,7 @@ export interface LoadExtensionTypesForDocumentationResponse {
     reportingTaskTypes: DocumentedType[];
     flowAnalysisRuleTypes: DocumentedType[];
     parameterProviderTypes: DocumentedType[];
+    registryClientTypes: DocumentedType[];
 }
 
 export interface ExtensionTypesState {

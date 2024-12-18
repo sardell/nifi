@@ -33,6 +33,7 @@ import {
     selectFlowAnalysisRuleTypes,
     selectParameterProviderTypes,
     selectProcessorTypes,
+    selectRegistryClientTypes,
     selectReportingTaskTypes
 } from '../../../state/extension-types/extension-types.selectors';
 import { ComponentType, isDefinedAndNotNull, NiFiCommon, selectCurrentRoute } from '@nifi/shared';
@@ -73,6 +74,10 @@ export class Documentation implements OnInit, AfterViewInit {
     flowAnalysisRuleTypes$ = this.store
         .select(selectFlowAnalysisRuleTypes)
         .pipe(map((extensionTypes) => this.sortExtensions(extensionTypes)));
+    registryClientTypes$ = this.store
+        .select(selectRegistryClientTypes)
+        .pipe(map((extensionTypes) => this.sortExtensions(extensionTypes)));
+
 
     accordion = viewChild.required(MatAccordion);
 

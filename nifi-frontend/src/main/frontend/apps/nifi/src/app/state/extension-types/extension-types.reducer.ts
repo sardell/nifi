@@ -65,6 +65,7 @@ export const extensionTypesReducer = createReducer(
         reportingTaskTypes: response.reportingTaskTypes,
         parameterProviderTypes: response.parameterProviderTypes,
         flowAnalysisRuleTypes: response.flowAnalysisRuleTypes,
+        registryClientTypes: response.registryClientTypes,
         status: 'success' as const
     })),
     on(loadExtensionTypesForDocumentationSuccess, (state, { response }) => ({
@@ -74,6 +75,7 @@ export const extensionTypesReducer = createReducer(
         reportingTaskTypes: response.reportingTaskTypes,
         parameterProviderTypes: response.parameterProviderTypes,
         flowAnalysisRuleTypes: response.flowAnalysisRuleTypes,
+        registryClientTypes: response.registryClientTypes,
         status: 'success' as const
     }))
 );

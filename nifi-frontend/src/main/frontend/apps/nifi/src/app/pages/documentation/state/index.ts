@@ -36,6 +36,8 @@ import {
 import { parameterProviderDefinitionReducer } from './parameter-provider-definition/parameter-provider-definition.reducer';
 import { flowAnalysisRuleDefinitionFeatureKey, FlowAnalysisRuleDefinitionState } from './flow-analysis-rule-definition';
 import { flowAnalysisRuleDefinitionReducer } from './flow-analysis-rule-definition/flow-analysis-rule-definition.reducer';
+import { flowRegistryClientDefinitionFeatureKey, FlowRegistryClientDefinitionState } from './flow-registry-client-definition';
+import { flowRegistryClientDefinitionReducer } from './flow-registry-client-definition/flow-registry-client-definition.reducer';
 import { ComponentType } from '@nifi/shared';
 import { DocumentedType } from '../../../state/shared';
 
@@ -190,6 +192,7 @@ export interface DocumentationState {
     [reportingTaskDefinitionFeatureKey]: ReportingTaskDefinitionState;
     [parameterProviderDefinitionFeatureKey]: ParameterProviderDefinitionState;
     [flowAnalysisRuleDefinitionFeatureKey]: FlowAnalysisRuleDefinitionState;
+    [flowRegistryClientDefinitionFeatureKey]: FlowRegistryClientDefinitionState;
     [additionalDetailsFeatureKey]: AdditionalDetailsState;
     [externalDocumentationFeatureKey]: ExternalDocumentationState;
 }
@@ -201,6 +204,7 @@ export function reducers(state: DocumentationState | undefined, action: Action) 
         [reportingTaskDefinitionFeatureKey]: reportingTaskDefinitionReducer,
         [parameterProviderDefinitionFeatureKey]: parameterProviderDefinitionReducer,
         [flowAnalysisRuleDefinitionFeatureKey]: flowAnalysisRuleDefinitionReducer,
+        [flowRegistryClientDefinitionFeatureKey]: flowRegistryClientDefinitionReducer,
         [additionalDetailsFeatureKey]: additionalDetailsReducer,
         [externalDocumentationFeatureKey]: externalDocumentationReducer
     })(state, action);
