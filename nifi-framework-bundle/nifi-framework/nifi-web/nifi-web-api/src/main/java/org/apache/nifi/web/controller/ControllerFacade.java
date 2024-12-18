@@ -35,6 +35,7 @@ import org.apache.nifi.bundle.BundleCoordinate;
 import org.apache.nifi.c2.protocol.component.api.ComponentManifest;
 import org.apache.nifi.c2.protocol.component.api.ControllerServiceDefinition;
 import org.apache.nifi.c2.protocol.component.api.FlowAnalysisRuleDefinition;
+import org.apache.nifi.c2.protocol.component.api.FlowRegistryClientDefinition;
 import org.apache.nifi.c2.protocol.component.api.ParameterProviderDefinition;
 import org.apache.nifi.c2.protocol.component.api.ProcessorDefinition;
 import org.apache.nifi.c2.protocol.component.api.ReportingTaskDefinition;
@@ -646,6 +647,11 @@ public class ControllerFacade implements Authorizable {
     public FlowAnalysisRuleDefinition getFlowAnalysisRuleDefinition(String group, String artifact, String version, String type) {
         final ComponentManifest componentManifest = getComponentManifest(group, artifact, version);
         return componentManifest.getFlowAnalysisRules().stream().filter(flowAnalysisRuleDefinition -> type.equals(flowAnalysisRuleDefinition.getType())).findFirst().orElse(null);
+    }
+
+    public FlowRegistryClientDefinition getFlowRegistryClientDefinition(String group, String artifact, String version, String type) {
+        final ComponentManifest componentManifest = getComponentManifest(group, artifact, version);
+        return componentManifest.getFlowRegistryClients().stream().filter(flowRegistryClientDefinition -> type.equals(flowRegistryClientDefinition.getType())).findFirst().orElse(null);
     }
 
     public String getAdditionalDetails(String group, String artifact, String version, String type) {

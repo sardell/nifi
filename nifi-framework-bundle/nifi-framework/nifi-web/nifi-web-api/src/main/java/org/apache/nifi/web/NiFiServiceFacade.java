@@ -23,6 +23,7 @@ import org.apache.nifi.authorization.user.NiFiUser;
 import org.apache.nifi.bundle.BundleCoordinate;
 import org.apache.nifi.c2.protocol.component.api.ControllerServiceDefinition;
 import org.apache.nifi.c2.protocol.component.api.FlowAnalysisRuleDefinition;
+import org.apache.nifi.c2.protocol.component.api.FlowRegistryClientDefinition;
 import org.apache.nifi.c2.protocol.component.api.ParameterProviderDefinition;
 import org.apache.nifi.c2.protocol.component.api.ProcessorDefinition;
 import org.apache.nifi.c2.protocol.component.api.ReportingTaskDefinition;
@@ -556,6 +557,17 @@ public interface NiFiServiceFacade {
      * @return The FlowAnalysisRuleDefinition
      */
     FlowAnalysisRuleDefinition getFlowAnalysisRuleDefinition(String group, String artifact, String version, String type);
+
+    /**
+     * Return the FlowRegistryClientDefinition the specified Flow Registry Client.
+     *
+     * @param group The bundle group
+     * @param artifact The bundle artifact
+     * @param version The bundle version
+     * @param type The Flow Registry Client type
+     * @return The FlowRegistryClientDefinition
+     */
+    FlowRegistryClientDefinition getFlowRegistryClientDefinition(String group, String artifact, String version, String type);
 
     /**
      * Return the additionalDetails for the specified component.

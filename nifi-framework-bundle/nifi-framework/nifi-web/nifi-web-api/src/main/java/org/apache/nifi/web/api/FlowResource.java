@@ -54,6 +54,7 @@ import org.apache.nifi.bundle.BundleCoordinate;
 import org.apache.nifi.bundle.BundleDetails;
 import org.apache.nifi.c2.protocol.component.api.ControllerServiceDefinition;
 import org.apache.nifi.c2.protocol.component.api.FlowAnalysisRuleDefinition;
+import org.apache.nifi.c2.protocol.component.api.FlowRegistryClientDefinition;
 import org.apache.nifi.c2.protocol.component.api.ParameterProviderDefinition;
 import org.apache.nifi.c2.protocol.component.api.ProcessorDefinition;
 import org.apache.nifi.c2.protocol.component.api.ReportingTaskDefinition;
@@ -2223,6 +2224,62 @@ public class FlowResource extends ApplicationResource {
         registryClientEntities.setRegistries(registryClients);
 
         return generateOkResponse(populateRemainingRegistryClientEntityContent(registryClientEntities)).build();
+    }
+
+    @GET
+    @Consumes(MediaType.WILDCARD)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("flow-registry-client-definition/{group}/{artifact}/{version}/{type}")
+    @Operation(
+            summary = "Retrieves the Flow Registry Client Definition for the specified component type.",
+            description = NON_GUARANTEED_ENDPOINT,
+            responses = @ApiResponse(content = @Content(schema = @Schema(implementation = FlowAnalysisRuleDefinition.class))),
+            security = {
+                    @SecurityRequirement(name = "Read - /flow")
+            }
+    )
+    @ApiResponses(
+            value = {
+                    @ApiResponse(responseCode = "400", description = "NiFi was unable to complete the request because it was invalid. The request should not be retried without modification."),
+                    @ApiResponse(responseCode = "401", description = "Client could not be authenticated."),
+                    @ApiResponse(responseCode = "403", description = "Client is not authorized to make this request."),
+                    @ApiResponse(responseCode = "404", description = "The flow registry client definition for the coordinates could not be located.")
+            }
+    )
+    public Response getFlowRegistryClientDefinition(
+            @Parameter(
+                    description = "The bundle group",
+                    required = true
+            )
+            @PathParam("group") String group,
+            @Parameter(
+                    description = "The bundle artifact",
+                    required = true
+            )
+            @PathParam("artifact") String artifact,
+            @Parameter(
+                    description = "The bundle version",
+                    required = true
+            )
+            @PathParam("version") String version,
+            @Parameter(
+                    description = "The flow registry client type",
+                    required = true
+            )
+            @PathParam("type") String type
+    ) throws InterruptedException {
+
+        authorizeFlow();
+
+        if (isReplicateRequest()) {
+            return replicate(HttpMethod.GET);
+        }
+
+        // create response entity
+        final FlowRegistryClientDefinition entity = serviceFacade.getFlowRegistryClientDefinition(group, artifact, version, type);
+
+        // generate the response
+        return generateOkResponse(entity).build();
     }
 
     /**
