@@ -36,10 +36,9 @@ public class QueryStringToFragmentFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
         final HttpServletRequest httpServletRequest = (HttpServletRequest) request;
         final Map<String, String[]> parameterMap = httpServletRequest.getParameterMap();
-
-        if (parameterMap == null || parameterMap.isEmpty() || (parameterMap.size() == 1 && parameterMap.get("toFragment") != null && parameterMap.get("toFragment").length > 0 && "true".equals(parameterMap.get("toFragment")[0]))) {
-            filterChain.doFilter(request, response);
-        } else {
+        final String[] toFragment = parameterMap != null ? parameterMap.get("toFragment") : null;
+        
+        if (toFragment != null && toFragment.length > 0 && "true".equals(toFragment[0])) {
             final String queryString = httpServletRequest.getQueryString();
 
             // Some NiFi front ends use hash based routing, so they don't need to know the baseHref. With hash based
@@ -51,6 +50,8 @@ public class QueryStringToFragmentFilter implements Filter {
 
             final HttpServletResponse httpServletResponse = (HttpServletResponse) response;
             httpServletResponse.sendRedirect(redirectUri.toString());
+        } else {
+            filterChain.doFilter(request, response);
         }
     }
 }

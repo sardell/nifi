@@ -1120,8 +1120,7 @@ export class FlowEffects {
                                 routeBoundary,
                                 context: 'Processor'
                             } as BackNavigation
-                        },
-                        queryParams: { toFragment: true }
+                        }
                     });
                 })
             ),

@@ -79,6 +79,7 @@ export class AdvancedUi {
             .set('clientId', params.clientId)
             .set('editable', params.editable)
             .set('disconnectedNodeAcknowledged', params.disconnectedNodeAcknowledged)
+            .set('toFragment', true)
             .toString();
         const url = `${params.url}/?${queryParams}`;
 
