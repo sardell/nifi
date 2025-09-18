@@ -28,15 +28,20 @@ import org.apache.nifi.web.servlet.shared.RequestUriBuilder;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Map;
 
 public class QueryStringToFragmentFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain filterChain) throws IOException, ServletException {
         final HttpServletRequest httpServletRequest = (HttpServletRequest) request;
-        final String queryString = httpServletRequest.getQueryString();
+        final Map<String, String[]> parameterMap = httpServletRequest.getParameterMap();
 
-        if (queryString != null) {
+        if (parameterMap == null || parameterMap.isEmpty() || (parameterMap.size() == 1 && parameterMap.get("toFragment") != null && parameterMap.get("toFragment").length > 0 && "true".equals(parameterMap.get("toFragment")[0]))) {
+            filterChain.doFilter(request, response);
+        } else {
+            final String queryString = httpServletRequest.getQueryString();
+
             // Some NiFi front ends use hash based routing, so they don't need to know the baseHref. With hash based
             // routing query parameters are implemented within the URL fragment. Because of this any query parameters on the
             // original URL are not considered. This filter captures those and adds them to the fragment.
@@ -46,8 +51,6 @@ public class QueryStringToFragmentFilter implements Filter {
 
             final HttpServletResponse httpServletResponse = (HttpServletResponse) response;
             httpServletResponse.sendRedirect(redirectUri.toString());
-        } else {
-            filterChain.doFilter(request, response);
         }
     }
 }
