@@ -44,12 +44,14 @@ import org.apache.nifi.controller.ConfigurationContext;
 import org.apache.nifi.controller.VerifiableControllerService;
 import org.apache.nifi.expression.ExpressionLanguageScope;
 import org.apache.nifi.logging.ComponentLog;
+import org.apache.nifi.migration.PropertyConfiguration;
 import org.apache.nifi.processor.exception.ProcessException;
 import org.apache.nifi.processor.util.JsonValidator;
 import org.apache.nifi.processor.util.StandardValidators;
 import org.apache.nifi.proxy.ProxyConfiguration;
 import org.apache.nifi.proxy.ProxySpec;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.apache.nifi.components.ConfigVerificationResult.Outcome.FAILED;
 import static org.apache.nifi.components.ConfigVerificationResult.Outcome.SUCCESSFUL;
 
@@ -68,8 +70,7 @@ public class JsonConfigBasedBoxClientService extends AbstractControllerService i
         .build();
 
     public static final PropertyDescriptor ACCOUNT_ID = new PropertyDescriptor.Builder()
-        .name("box-account-id")
-        .displayName("Account ID")
+        .name("Account ID")
         .description("The ID of the Box account which the app will act on behalf of.")
         .required(true)
         .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
@@ -78,8 +79,7 @@ public class JsonConfigBasedBoxClientService extends AbstractControllerService i
         .build();
 
     public static final PropertyDescriptor APP_CONFIG_FILE = new PropertyDescriptor.Builder()
-        .name("app-config-file")
-        .displayName("App Config File")
+        .name("App Config File")
         .description("Full path of an App config JSON file. See Additional Details for more information.")
         .required(false)
         .identifiesExternalResource(ResourceCardinality.SINGLE, ResourceType.FILE)
@@ -87,13 +87,28 @@ public class JsonConfigBasedBoxClientService extends AbstractControllerService i
         .build();
 
     public static final PropertyDescriptor APP_CONFIG_JSON = new PropertyDescriptor.Builder()
-        .name("app-config-json")
-        .displayName("App Config JSON")
+        .name("App Config JSON")
         .description("The raw JSON containing an App config. See Additional Details for more information.")
         .required(false)
         .sensitive(true)
         .addValidator(JsonValidator.INSTANCE)
         .expressionLanguageSupported(ExpressionLanguageScope.ENVIRONMENT)
+        .build();
+
+    static final PropertyDescriptor CONNECT_TIMEOUT = new PropertyDescriptor.Builder()
+        .name("Connect Timeout")
+        .description("Maximum amount of time to wait before failing during initial socket connection.")
+        .required(true)
+        .defaultValue("10 secs")
+        .addValidator(StandardValidators.TIME_PERIOD_VALIDATOR)
+        .build();
+
+    static final PropertyDescriptor READ_TIMEOUT = new PropertyDescriptor.Builder()
+        .name("Read Timeout")
+        .description("Maximum amount of time to wait before failing while reading socket responses.")
+        .required(true)
+        .defaultValue("30 secs")
+        .addValidator(StandardValidators.TIME_PERIOD_VALIDATOR)
         .build();
 
     private static final ProxySpec[] PROXY_SPECS = {ProxySpec.HTTP, ProxySpec.HTTP_AUTH};
@@ -103,6 +118,8 @@ public class JsonConfigBasedBoxClientService extends AbstractControllerService i
         ACCOUNT_ID,
         APP_CONFIG_FILE,
         APP_CONFIG_JSON,
+        CONNECT_TIMEOUT,
+        READ_TIMEOUT,
         ProxyConfiguration.createProxyConfigPropertyDescriptor(PROXY_SPECS)
     );
 
@@ -217,7 +234,6 @@ public class JsonConfigBasedBoxClientService extends AbstractControllerService i
                 final String accountId = context.getProperty(ACCOUNT_ID).evaluateAttributeExpressions().getValue();
                 api.asUser(accountId);
             }
-            default -> throw new IllegalArgumentException("Unrecognized App actor:" + appActor);
         }
 
         if (!Proxy.Type.DIRECT.equals(proxyConfiguration.getProxyType())) {
@@ -227,6 +243,17 @@ public class JsonConfigBasedBoxClientService extends AbstractControllerService i
                 api.setProxyBasicAuthentication(proxyConfiguration.getProxyUserName(), proxyConfiguration.getProxyUserPassword());
             }
         }
+
+        api.setConnectTimeout(context.getProperty(CONNECT_TIMEOUT).asTimePeriod(MILLISECONDS).intValue());
+        api.setReadTimeout(context.getProperty(READ_TIMEOUT).asTimePeriod(MILLISECONDS).intValue());
+
         return api;
+    }
+
+    @Override
+    public void migrateProperties(PropertyConfiguration config) {
+        config.renameProperty("box-account-id", ACCOUNT_ID.getName());
+        config.renameProperty("app-config-file", APP_CONFIG_FILE.getName());
+        config.renameProperty("app-config-json", APP_CONFIG_JSON.getName());
     }
 }

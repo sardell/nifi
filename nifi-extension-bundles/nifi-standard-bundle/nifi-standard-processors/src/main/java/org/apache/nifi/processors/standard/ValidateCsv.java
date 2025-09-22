@@ -142,6 +142,20 @@ public class ValidateCsv extends AbstractProcessor {
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .build();
 
+    public static final PropertyDescriptor MAX_LINES_PER_ROW = new PropertyDescriptor.Builder()
+            .name("Max Lines Per Row")
+            .description("""
+                    The maximum number of lines that a row can span before an exception is thrown. This option allows
+                    the processor to fail fast when encountering CSV with mismatching quotes - the normal behaviour
+                    would be to continue reading until the matching quote is found, which could potentially mean reading
+                    the whole file (and exhausting all available memory). Zero value will disable this option.
+                    """)
+            .required(true)
+            .defaultValue("0")
+            .expressionLanguageSupported(ExpressionLanguageScope.NONE)
+            .addValidator(StandardValidators.NON_NEGATIVE_INTEGER_VALIDATOR)
+            .build();
+
     public static final PropertyDescriptor DELIMITER_CHARACTER = new PropertyDescriptor.Builder()
             .name("validate-csv-delimiter")
             .displayName("Delimiter character")
@@ -167,19 +181,18 @@ public class ValidateCsv extends AbstractProcessor {
             .displayName("Validation strategy")
             .description("Strategy to apply when routing input files to output relationships.")
             .required(true)
-            .defaultValue(VALIDATE_WHOLE_FLOWFILE.getValue())
+            .defaultValue(VALIDATE_WHOLE_FLOWFILE)
             .allowableValues(VALIDATE_LINES_INDIVIDUALLY, VALIDATE_WHOLE_FLOWFILE)
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .build();
 
     public static final PropertyDescriptor CSV_SOURCE_ATTRIBUTE = new PropertyDescriptor.Builder()
             .name("CSV Source Attribute")
-            .displayName("CSV Source Attribute")
             .description("The name of the attribute containing CSV data to be validated. If this property is blank, the FlowFile content will be validated.")
             .required(false)
             .expressionLanguageSupported(ExpressionLanguageScope.ENVIRONMENT)
             .addValidator(StandardValidators.ATTRIBUTE_KEY_VALIDATOR)
-            .dependsOn(VALIDATION_STRATEGY, VALIDATE_WHOLE_FLOWFILE.getValue())
+            .dependsOn(VALIDATION_STRATEGY, VALIDATE_WHOLE_FLOWFILE)
             .build();
 
     public static final PropertyDescriptor INCLUDE_ALL_VIOLATIONS = new PropertyDescriptor.Builder()
@@ -201,6 +214,7 @@ public class ValidateCsv extends AbstractProcessor {
             HEADER,
             DELIMITER_CHARACTER,
             QUOTE_CHARACTER,
+            MAX_LINES_PER_ROW,
             END_OF_LINE_CHARACTER,
             VALIDATION_STRATEGY,
             INCLUDE_ALL_VIOLATIONS
@@ -266,9 +280,28 @@ public class ValidateCsv extends AbstractProcessor {
         // input is transferred over to Java as is. So when you type the characters "\"
         // and "n" into the UI the Java string will end up being those two characters
         // not the interpreted value "\n".
-        final String msgDemarcator = context.getProperty(END_OF_LINE_CHARACTER).evaluateAttributeExpressions(flowFile).getValue().replace("\\n", "\n").replace("\\r", "\r").replace("\\t", "\t");
-        return new CsvPreference.Builder(context.getProperty(QUOTE_CHARACTER).evaluateAttributeExpressions(flowFile).getValue().charAt(0),
-                context.getProperty(DELIMITER_CHARACTER).evaluateAttributeExpressions(flowFile).getValue().charAt(0), msgDemarcator).build();
+        final String msgDemarcator = context.getProperty(END_OF_LINE_CHARACTER)
+                .evaluateAttributeExpressions(flowFile)
+                .getValue()
+                .replace("\\n", "\n")
+                .replace("\\r", "\r")
+                .replace("\\t", "\t");
+
+        final char quoteChar = context.getProperty(QUOTE_CHARACTER)
+                .evaluateAttributeExpressions(flowFile)
+                .getValue()
+                .charAt(0);
+
+        final int delimiterChar = context.getProperty(DELIMITER_CHARACTER)
+                .evaluateAttributeExpressions(flowFile)
+                .getValue()
+                .charAt(0);
+
+        final int maxLinesPerRow = context.getProperty(MAX_LINES_PER_ROW).asInteger();
+
+        return new CsvPreference.Builder(quoteChar, delimiterChar, msgDemarcator)
+                .maxLinesPerRow(maxLinesPerRow)
+                .build();
     }
 
     /**
@@ -490,7 +523,7 @@ public class ValidateCsv extends AbstractProcessor {
         }
 
         InputStream stream;
-        if (context.getProperty(CSV_SOURCE_ATTRIBUTE).isSet() && isWholeFFValidation) {
+        if (isWholeFFValidation && context.getProperty(CSV_SOURCE_ATTRIBUTE).isSet()) {
             String csvAttribute = flowFile.getAttribute(context.getProperty(CSV_SOURCE_ATTRIBUTE).evaluateAttributeExpressions().getValue());
             stream = new ByteArrayInputStream(Objects.requireNonNullElse(csvAttribute, "").getBytes(StandardCharsets.UTF_8));
         } else {

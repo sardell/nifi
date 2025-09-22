@@ -58,7 +58,6 @@ import org.slf4j.LoggerFactory;
 
 public class FileResourceRepository implements ResourceRepository {
 
-    static final String ASSET_REPOSITORY_DIRECTORY = "repository";
     static final String RESOURCE_REPOSITORY_FILE_NAME = "resources.json";
 
     private static final Logger LOG = LoggerFactory.getLogger(FileResourceRepository.class);
@@ -71,10 +70,10 @@ public class FileResourceRepository implements ResourceRepository {
 
     private ResourceRepositoryDescriptor resourceRepositoryDescriptor;
 
-    public FileResourceRepository(Path assetDirectory, Path extensionDirectory, Path configDirectory, C2Serializer c2Serializer) {
+    public FileResourceRepository(Path assetRepositoryDirectory, Path extensionDirectory, Path configDirectory, C2Serializer c2Serializer) {
         this.resourceRepositoryFile = configDirectory.resolve(RESOURCE_REPOSITORY_FILE_NAME);
         this.c2Serializer = c2Serializer;
-        this.assetRepositoryDirectory = assetDirectory.resolve(ASSET_REPOSITORY_DIRECTORY);
+        this.assetRepositoryDirectory = assetRepositoryDirectory;
         this.extensionDirectory = extensionDirectory;
         initialize();
     }
@@ -161,6 +160,16 @@ public class FileResourceRepository implements ResourceRepository {
 
         return Optional.of(resourceItem);
     }
+
+    @Override
+    public Optional<Path> getAbsolutePath(String resourceId) {
+        return resourceRepositoryDescriptor.resourceItems.stream()
+                .filter(resourceItem -> resourceItem.getResourceId().equals(resourceId))
+                .map(this::resourcePath)
+                .map(Path::toAbsolutePath)
+                .findFirst();
+    }
+
 
     private void initialize() {
         try {

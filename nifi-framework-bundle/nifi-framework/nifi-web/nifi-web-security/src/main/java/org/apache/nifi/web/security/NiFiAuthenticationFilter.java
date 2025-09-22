@@ -20,6 +20,7 @@ import org.apache.nifi.authorization.user.NiFiUserUtils;
 import org.apache.nifi.util.NiFiProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.authentication.AuthenticationDetailsSource;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.Authentication;
@@ -44,6 +45,7 @@ public abstract class NiFiAuthenticationFilter extends GenericFilterBean {
 
     private static final Logger log = LoggerFactory.getLogger(NiFiAuthenticationFilter.class);
 
+    protected AuthenticationDetailsSource<HttpServletRequest, NiFiWebAuthenticationDetails> authenticationDetailsSource;
     private AuthenticationManager authenticationManager;
     private NiFiProperties properties;
 
@@ -67,7 +69,7 @@ public abstract class NiFiAuthenticationFilter extends GenericFilterBean {
         try {
             final Authentication authenticationRequest = attemptAuthentication(request);
             if (authenticationRequest != null) {
-                log.info("Authentication Started {} [{}] {} {}", request.getRemoteAddr(), authenticationRequest, request.getMethod(), request.getRequestURL());
+                log.debug("Authentication Started {} [{}] {} {}", request.getRemoteAddr(), authenticationRequest, request.getMethod(), request.getRequestURL());
 
                 // attempt to authenticate the user
                 final Authentication authenticated = authenticationManager.authenticate(authenticationRequest);
@@ -111,7 +113,7 @@ public abstract class NiFiAuthenticationFilter extends GenericFilterBean {
      * @param authResult The Authentication 'token'/object created by one of the various NiFiAuthenticationFilter subclasses.
      */
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, Authentication authResult) {
-        log.info("Authentication Success [{}] {} {} {}", authResult, request.getRemoteAddr(), request.getMethod(), request.getRequestURL());
+        log.debug("Authentication Success [{}] {} {} {}", authResult, request.getRemoteAddr(), request.getMethod(), request.getRequestURL());
 
         SecurityContextHolder.getContext().setAuthentication(authResult);
         ProxiedEntitiesUtils.successfulAuthentication(request, response);
@@ -161,6 +163,10 @@ public abstract class NiFiAuthenticationFilter extends GenericFilterBean {
 
     public void setAuthenticationManager(AuthenticationManager authenticationManager) {
         this.authenticationManager = authenticationManager;
+    }
+
+    public void setAuthenticationDetailsSource(final AuthenticationDetailsSource<HttpServletRequest, NiFiWebAuthenticationDetails> authenticationDetailsSource) {
+        this.authenticationDetailsSource = authenticationDetailsSource;
     }
 
     public void setProperties(NiFiProperties properties) {

@@ -78,7 +78,6 @@ public class EncodeContent extends AbstractProcessor {
 
     public static final PropertyDescriptor LINE_OUTPUT_MODE = new PropertyDescriptor.Builder()
             .name("Line Output Mode")
-            .displayName("Line Output Mode")
             .description("Controls the line formatting for encoded content based on selected property values.")
             .required(true)
             .defaultValue(LineOutputMode.SINGLE_LINE)
@@ -90,7 +89,6 @@ public class EncodeContent extends AbstractProcessor {
 
     public static final PropertyDescriptor ENCODED_LINE_LENGTH = new PropertyDescriptor.Builder()
             .name("Encoded Line Length")
-            .displayName("Encoded Line Length")
             .description("Each line of encoded data will contain up to the configured number of characters, rounded down to the nearest multiple of 4.")
             .required(true)
             .defaultValue("76")
@@ -146,8 +144,15 @@ public class EncodeContent extends AbstractProcessor {
 
         final boolean encode = context.getProperty(MODE).asAllowableValue(EncodingMode.class).equals(EncodingMode.ENCODE);
         final EncodingType encoding = context.getProperty(ENCODING).asAllowableValue(EncodingType.class);
-        final boolean singleLineOutput = context.getProperty(LINE_OUTPUT_MODE).asAllowableValue(LineOutputMode.class).equals(LineOutputMode.SINGLE_LINE);
-        final int lineLength = singleLineOutput ? -1 : context.getProperty(ENCODED_LINE_LENGTH).evaluateAttributeExpressions(flowFile).asInteger();
+        final int lineLength;
+        if (encode && (encoding == EncodingType.BASE32 || encoding == EncodingType.BASE64)) {
+            final LineOutputMode lineOutputMode = context.getProperty(LINE_OUTPUT_MODE).asAllowableValue(LineOutputMode.class);
+
+            lineLength = lineOutputMode == LineOutputMode.SINGLE_LINE
+                    ? -1 : context.getProperty(ENCODED_LINE_LENGTH).evaluateAttributeExpressions(flowFile).asInteger();
+        } else {
+            lineLength = -1;
+        }
 
         final StreamCallback callback = getStreamCallback(encode, encoding, lineLength);
 

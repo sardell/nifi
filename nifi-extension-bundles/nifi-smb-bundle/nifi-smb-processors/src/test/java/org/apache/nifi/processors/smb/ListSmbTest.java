@@ -25,7 +25,7 @@ import static org.apache.nifi.processor.util.list.AbstractListProcessor.REL_SUCC
 import static org.apache.nifi.processor.util.list.AbstractListProcessor.TARGET_SYSTEM_TIMESTAMP_PRECISION;
 import static org.apache.nifi.processor.util.list.ListedEntityTracker.TRACKING_STATE_CACHE;
 import static org.apache.nifi.processors.smb.ListSmb.DIRECTORY;
-import static org.apache.nifi.processors.smb.ListSmb.FILE_NAME_SUFFIX_FILTER;
+import static org.apache.nifi.processors.smb.ListSmb.IGNORE_FILES_WITH_SUFFIX;
 import static org.apache.nifi.processors.smb.ListSmb.INITIAL_LISTING_STRATEGY;
 import static org.apache.nifi.processors.smb.ListSmb.INITIAL_LISTING_TIMESTAMP;
 import static org.apache.nifi.processors.smb.ListSmb.MAXIMUM_AGE;
@@ -46,8 +46,10 @@ import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.nifi.distributed.cache.client.DistributedMapCacheClient;
+import org.apache.nifi.logging.ComponentLog;
 import org.apache.nifi.processor.util.list.ListedEntity;
 import org.apache.nifi.processors.smb.util.InitialListingStrategy;
 import org.apache.nifi.services.smb.SmbClientProviderService;
@@ -105,7 +107,7 @@ class ListSmbTest {
         testRunner.assertTransferCount(REL_SUCCESS, 1);
         testRunner.clearTransferState();
 
-        testRunner.setProperty(FILE_NAME_SUFFIX_FILTER, "suffix_changed");
+        testRunner.setProperty(IGNORE_FILES_WITH_SUFFIX, "suffix_changed");
         testRunner.run();
         testRunner.assertTransferCount(REL_SUCCESS, 1);
         testRunner.clearTransferState();
@@ -113,7 +115,7 @@ class ListSmbTest {
         final SmbClientProviderService clientProviderService = mock(SmbClientProviderService.class);
         when(clientProviderService.getIdentifier()).thenReturn("different-client-provider");
         when(clientProviderService.getServiceLocation()).thenReturn(URI.create("smb://localhost:445/share"));
-        when(clientProviderService.getClient()).thenReturn(mockNifiSmbClientService);
+        when(clientProviderService.getClient(any(ComponentLog.class))).thenReturn(mockNifiSmbClientService);
         testRunner.setProperty(SMB_CLIENT_PROVIDER_SERVICE, "different-client-provider");
         testRunner.addControllerService("different-client-provider", clientProviderService);
         testRunner.enableControllerService(clientProviderService);
@@ -309,7 +311,7 @@ class ListSmbTest {
         testRunner.setProperty(DIRECTORY, "testDirectory");
 
         final SmbClientProviderService clientProviderService = mockSmbClientProviderService();
-        when(clientProviderService.getClient()).thenReturn(mockNifiSmbClientService);
+        when(clientProviderService.getClient(any(ComponentLog.class))).thenReturn(mockNifiSmbClientService);
         testRunner.setProperty(SMB_CLIENT_PROVIDER_SERVICE, CLIENT_SERVICE_PROVIDER_ID);
         testRunner.addControllerService(CLIENT_SERVICE_PROVIDER_ID, clientProviderService);
         testRunner.enableControllerService(clientProviderService);
@@ -329,7 +331,7 @@ class ListSmbTest {
     }
 
     private DistributedMapCacheClient mockDistributedMap() throws IOException {
-        final Map<String, ConcurrentHashMap<String, ListedEntity>> store = new ConcurrentHashMap<>();
+        final Map<String, ? extends ConcurrentMap<String, ListedEntity>> store = new ConcurrentHashMap<>();
         final DistributedMapCacheClient cacheService = mock(DistributedMapCacheClient.class);
         when(cacheService.putIfAbsent(any(), any(), any(), any())).thenReturn(false);
         when(cacheService.containsKey(any(), any())).thenReturn(false);

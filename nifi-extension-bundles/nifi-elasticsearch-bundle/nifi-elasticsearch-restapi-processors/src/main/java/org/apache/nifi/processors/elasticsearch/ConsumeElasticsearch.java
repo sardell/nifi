@@ -66,7 +66,7 @@ import java.util.stream.Stream;
 @TriggerSerially
 @PrimaryNodeOnly
 @DefaultSchedule(period = "1 min")
-@Tags({"elasticsearch", "elasticsearch5", "elasticsearch6", "elasticsearch7", "elasticsearch8", "query", "scroll", "page", "search", "json"})
+@Tags({"elasticsearch", "elasticsearch7", "elasticsearch8", "elasticsearch9", "query", "scroll", "page", "search", "json"})
 @CapabilityDescription("A processor that repeatedly runs a paginated query against a field using a Range query to consume new Documents from an Elasticsearch index/query. " +
         "The processor will retrieve multiple pages of results until either no more results are available or the Pagination Keep Alive expiration is reached, " +
         "after which the Range query will automatically update the field constraint based on the last retrieved Document value.")
@@ -188,7 +188,7 @@ public class ConsumeElasticsearch extends SearchElasticsearch {
     private static final List<PropertyDescriptor> propertyDescriptors = Stream.concat(
             Stream.of(RANGE_FIELD, RANGE_FIELD_SORT_ORDER, RANGE_INITIAL_VALUE, RANGE_DATE_FORMAT, RANGE_TIME_ZONE, ADDITIONAL_FILTERS),
             scrollPropertyDescriptors.stream()
-                    .filter(pd -> !QUERY.equals(pd) && !QUERY_CLAUSE.equals(pd) && !QUERY_DEFINITION_STYLE.equals(pd))
+                    .filter(pd -> !QUERY.equals(pd) && !QUERY_CLAUSE.equals(pd) && !QUERY_DEFINITION_STYLE.equals(pd) && !RESTART_ON_FINISH.equals(pd))
                     .map(property -> {
                         if (property == ElasticsearchRestProcessor.SIZE) return SIZE;
                         if (property == ElasticsearchRestProcessor.AGGREGATIONS) return AGGREGATIONS;
@@ -270,16 +270,17 @@ public class ConsumeElasticsearch extends SearchElasticsearch {
         // only retrieve documents with values greater than the last queried value (if present)
         final String trackingRangeValue = getTrackingRangeValueOrDefault(context);
         if (StringUtils.isNotBlank(trackingRangeValue)) {
-            filters.add(Collections.singletonMap("range", Collections.singletonMap(getTrackingRangeField(context),
-                    new HashMap<String, String>(3, 1) {{
-                        put("gt", trackingRangeValue);
-                        if (context.getProperty(RANGE_DATE_FORMAT).isSet()) {
-                            put("format", context.getProperty(RANGE_DATE_FORMAT).getValue());
-                        }
-                        if (context.getProperty(RANGE_TIME_ZONE).isSet()) {
-                            put("time_zone", context.getProperty(RANGE_TIME_ZONE).getValue());
-                        }
-                    }})));
+            final Map<String, String> innerValue = new HashMap<>(3, 1);
+            innerValue.put("gt", trackingRangeValue);
+            if (context.getProperty(RANGE_INITIAL_VALUE).isSet()) {
+                if (context.getProperty(RANGE_DATE_FORMAT).isSet()) {
+                    innerValue.put("format", context.getProperty(RANGE_DATE_FORMAT).getValue());
+                }
+                if (context.getProperty(RANGE_TIME_ZONE).isSet()) {
+                    innerValue.put("time_zone", context.getProperty(RANGE_TIME_ZONE).getValue());
+                }
+            }
+            filters.add(Map.of("range", Map.of(getTrackingRangeField(context), innerValue)));
         }
 
         // add any additional filters specified as a property, allowing for one (Object) or multiple (Array of Objects) filters

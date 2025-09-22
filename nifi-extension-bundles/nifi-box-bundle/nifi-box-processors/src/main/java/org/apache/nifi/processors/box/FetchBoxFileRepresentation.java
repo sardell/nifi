@@ -36,7 +36,6 @@ import org.apache.nifi.components.PropertyDescriptor.Builder;
 import org.apache.nifi.expression.ExpressionLanguageScope;
 import org.apache.nifi.flowfile.FlowFile;
 import org.apache.nifi.logging.ComponentLog;
-import org.apache.nifi.processor.AbstractProcessor;
 import org.apache.nifi.processor.ProcessContext;
 import org.apache.nifi.processor.ProcessSession;
 import org.apache.nifi.processor.Relationship;
@@ -66,7 +65,7 @@ import static org.apache.nifi.components.ConfigVerificationResult.Outcome;
         @WritesAttribute(attribute = "box.error.code", description = "The error code returned by Box if the operation fails.")
 })
 @SeeAlso({FetchBoxFile.class, ListBoxFile.class})
-public class FetchBoxFileRepresentation extends AbstractProcessor implements VerifiableProcessor {
+public class FetchBoxFileRepresentation extends AbstractBoxProcessor implements VerifiableProcessor {
 
     private static final String BOX_FILE_URI = "https://api.box.com/2.0/files/%s/content?representation=%s";
 
@@ -108,7 +107,7 @@ public class FetchBoxFileRepresentation extends AbstractProcessor implements Ver
             .build();
 
     private static final List<PropertyDescriptor> PROPERTY_DESCRIPTORS = List.of(
-            BoxClientService.BOX_CLIENT_SERVICE,
+            BOX_CLIENT_SERVICE,
             FILE_ID,
             REPRESENTATION_TYPE
     );
@@ -119,6 +118,13 @@ public class FetchBoxFileRepresentation extends AbstractProcessor implements Ver
             REL_FILE_NOT_FOUND,
             REL_REPRESENTATION_NOT_FOUND
     );
+
+    /*
+     * The maximum number of retries for polling the status of the generated representation.
+     * Each retry waits for 100 milliseconds before the next attempt, set in the Box SDK.
+     * Total wait time is 5 seconds.
+     */
+    private static final int MAX_RETRIES = 50;
 
     private volatile BoxAPIConnection boxAPIConnection;
 
@@ -134,7 +140,7 @@ public class FetchBoxFileRepresentation extends AbstractProcessor implements Ver
 
     @OnScheduled
     public void onScheduled(final ProcessContext context) {
-        final BoxClientService boxClientService = context.getProperty(BoxClientService.BOX_CLIENT_SERVICE)
+        final BoxClientService boxClientService = context.getProperty(BOX_CLIENT_SERVICE)
                 .asControllerService(BoxClientService.class);
         boxAPIConnection = boxClientService.getBoxApiConnection();
     }
@@ -156,7 +162,7 @@ public class FetchBoxFileRepresentation extends AbstractProcessor implements Ver
 
             flowFile = session.write(flowFile, outputStream ->
                     // Download the file representation, box sdk handles a request to create representation if it doesn't exist
-                    boxFile.getRepresentationContent("[" + representationType + "]", outputStream)
+                    boxFile.getRepresentationContent("[" + representationType + "]", "", outputStream, MAX_RETRIES)
             );
 
             flowFile = session.putAllAttributes(flowFile, Map.of(
@@ -212,7 +218,7 @@ public class FetchBoxFileRepresentation extends AbstractProcessor implements Ver
                                                  final ComponentLog verificationLogger,
                                                  final Map<String, String> attributes) {
         final List<ConfigVerificationResult> results = new ArrayList<>();
-        final BoxClientService boxClientService = context.getProperty(BoxClientService.BOX_CLIENT_SERVICE)
+        final BoxClientService boxClientService = context.getProperty(BOX_CLIENT_SERVICE)
                 .asControllerService(BoxClientService.class);
         final BoxAPIConnection boxAPIConnection = boxClientService.getBoxApiConnection();
 

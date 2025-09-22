@@ -31,17 +31,20 @@ import org.apache.nifi.box.controllerservices.BoxClientService;
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.expression.ExpressionLanguageScope;
 import org.apache.nifi.flowfile.FlowFile;
-import org.apache.nifi.processor.AbstractProcessor;
 import org.apache.nifi.processor.ProcessContext;
 import org.apache.nifi.processor.ProcessSession;
 import org.apache.nifi.processor.Relationship;
 import org.apache.nifi.processor.exception.ProcessException;
 import org.apache.nifi.processor.util.StandardValidators;
+import org.apache.nifi.processors.box.utils.BoxDate;
 import org.apache.nifi.serialization.RecordReader;
 import org.apache.nifi.serialization.RecordReaderFactory;
 import org.apache.nifi.serialization.record.Record;
+import org.apache.nifi.serialization.record.RecordField;
+import org.apache.nifi.serialization.record.RecordFieldType;
 
 import java.io.InputStream;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +74,7 @@ import static org.apache.nifi.processors.box.BoxFileAttributes.ERROR_MESSAGE_DES
         @WritesAttribute(attribute = ERROR_CODE, description = ERROR_CODE_DESC),
         @WritesAttribute(attribute = ERROR_MESSAGE, description = ERROR_MESSAGE_DESC)
 })
-public class UpdateBoxFileMetadataInstance extends AbstractProcessor {
+public class UpdateBoxFileMetadataInstance extends AbstractBoxProcessor {
 
     public static final PropertyDescriptor FILE_ID = new PropertyDescriptor.Builder()
             .name("File ID")
@@ -119,7 +122,7 @@ public class UpdateBoxFileMetadataInstance extends AbstractProcessor {
             .build();
 
     private static final List<PropertyDescriptor> PROPERTY_DESCRIPTORS = List.of(
-            BoxClientService.BOX_CLIENT_SERVICE,
+            BOX_CLIENT_SERVICE,
             FILE_ID,
             TEMPLATE_KEY,
             RECORD_READER
@@ -146,7 +149,7 @@ public class UpdateBoxFileMetadataInstance extends AbstractProcessor {
 
     @OnScheduled
     public void onScheduled(final ProcessContext context) {
-        final BoxClientService boxClientService = context.getProperty(BoxClientService.BOX_CLIENT_SERVICE)
+        final BoxClientService boxClientService = context.getProperty(BOX_CLIENT_SERVICE)
                 .asControllerService(BoxClientService.class);
         boxAPIConnection = boxClientService.getBoxApiConnection();
     }
@@ -216,8 +219,16 @@ public class UpdateBoxFileMetadataInstance extends AbstractProcessor {
 
             final Record record = recordReader.nextRecord();
             if (record != null) {
-                for (String fieldName : record.getSchema().getFieldNames()) {
-                    desiredState.put(fieldName, record.getValue(fieldName));
+                final List<RecordField> fields = record.getSchema().getFields();
+                for (final RecordField field : fields) {
+                    final String fieldName = field.getFieldName();
+                    final RecordFieldType type = field.getDataType().getFieldType();
+
+                    final Object value = RecordFieldType.DATE.equals(type)
+                            ? record.getAsLocalDate(fieldName, null) // Ensuring dates are read as LocalDate.
+                            : record.getValue(field);
+
+                    desiredState.put(fieldName, value);
                 }
             }
         }
@@ -269,6 +280,7 @@ public class UpdateBoxFileMetadataInstance extends AbstractProcessor {
             switch (value) {
                 case Number n -> metadata.replace(propertyPath, n.doubleValue());
                 case List<?> l -> metadata.replace(propertyPath, convertListToStringList(l, propertyPath));
+                case LocalDate d -> metadata.replace(propertyPath, BoxDate.of(d).format());
                 default -> metadata.replace(propertyPath, value.toString());
             }
         } else {
@@ -276,6 +288,7 @@ public class UpdateBoxFileMetadataInstance extends AbstractProcessor {
             switch (value) {
                 case Number n -> metadata.add(propertyPath, n.doubleValue());
                 case List<?> l -> metadata.add(propertyPath, convertListToStringList(l, propertyPath));
+                case LocalDate d -> metadata.add(propertyPath, BoxDate.of(d).format());
                 default -> metadata.add(propertyPath, value.toString());
             }
         }

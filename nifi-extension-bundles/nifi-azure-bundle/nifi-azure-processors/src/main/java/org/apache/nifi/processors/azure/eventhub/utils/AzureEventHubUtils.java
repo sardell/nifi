@@ -27,6 +27,7 @@ import org.apache.nifi.expression.ExpressionLanguageScope;
 import org.apache.nifi.processor.util.StandardValidators;
 import org.apache.nifi.proxy.ProxyConfiguration;
 import org.apache.nifi.shared.azure.eventhubs.AzureEventHubComponent;
+import org.apache.nifi.shared.azure.eventhubs.AzureEventHubTransportType;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;
@@ -42,10 +43,11 @@ public final class AzureEventHubUtils {
     public static final AllowableValue AZURE_CHINA_ENDPOINT = new AllowableValue(".servicebus.chinacloudapi.cn", "Azure China", "Servicebus endpoint for China");
     public static final AllowableValue AZURE_GERMANY_ENDPOINT = new AllowableValue(".servicebus.cloudapi.de", "Azure Germany", "Servicebus endpoint for Germany");
     public static final AllowableValue AZURE_US_GOV_ENDPOINT = new AllowableValue(".servicebus.usgovcloudapi.net", "Azure US Government", "Servicebus endpoint for US Government");
+    public static final String OLD_POLICY_PRIMARY_KEY_DESCRIPTOR_NAME = "Shared Access Policy Primary Key";
+    public static final String OLD_USE_MANAGED_IDENTITY_DESCRIPTOR_NAME = "use-managed-identity";
 
     public static final PropertyDescriptor POLICY_PRIMARY_KEY = new PropertyDescriptor.Builder()
-            .name("Shared Access Policy Primary Key")
-            .displayName("Shared Access Policy Key")
+            .name("Shared Access Policy Key")
             .description("The key of the shared access policy. Either the primary or the secondary key can be used.")
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .expressionLanguageSupported(ExpressionLanguageScope.NONE)
@@ -54,8 +56,7 @@ public final class AzureEventHubUtils {
             .build();
 
     public static final PropertyDescriptor USE_MANAGED_IDENTITY = new PropertyDescriptor.Builder()
-            .name("use-managed-identity")
-            .displayName("Use Azure Managed Identity")
+            .name("Use Azure Managed Identity")
             .description("Choose whether or not to use the managed identity of Azure VM/VMSS")
             .required(true).defaultValue("false").allowableValues("true", "false")
             .addValidator(StandardValidators.BOOLEAN_VALIDATOR).build();
@@ -119,7 +120,14 @@ public final class AzureEventHubUtils {
      * @return {@link ProxyOptions proxy options}, null if Proxy is not set
      */
     public static Optional<ProxyOptions> getProxyOptions(final PropertyContext propertyContext) {
-        final ProxyConfiguration proxyConfiguration = ProxyConfiguration.getConfiguration(propertyContext);
+        final AzureEventHubTransportType transportType =
+                propertyContext.getProperty(AzureEventHubComponent.TRANSPORT_TYPE).asAllowableValue(AzureEventHubTransportType.class);
+
+        final ProxyConfiguration proxyConfiguration = switch (transportType) {
+            case AMQP -> ProxyConfiguration.DIRECT_CONFIGURATION;
+            case AMQP_WEB_SOCKETS -> ProxyConfiguration.getConfiguration(propertyContext);
+        };
+
         final ProxyOptions proxyOptions;
         if (proxyConfiguration != ProxyConfiguration.DIRECT_CONFIGURATION) {
             final Proxy proxy = getProxy(proxyConfiguration);

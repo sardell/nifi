@@ -17,32 +17,9 @@
 
 package org.apache.nifi.processors.workday;
 
-import static org.apache.nifi.processors.workday.GetWorkdayReport.FAILURE;
-import static org.apache.nifi.processors.workday.GetWorkdayReport.GET_WORKDAY_REPORT_JAVA_EXCEPTION_CLASS;
-import static org.apache.nifi.processors.workday.GetWorkdayReport.GET_WORKDAY_REPORT_JAVA_EXCEPTION_MESSAGE;
-import static org.apache.nifi.processors.workday.GetWorkdayReport.HEADER_AUTHORIZATION;
-import static org.apache.nifi.processors.workday.GetWorkdayReport.ORIGINAL;
-import static org.apache.nifi.processors.workday.GetWorkdayReport.RECORD_COUNT;
-import static org.apache.nifi.processors.workday.GetWorkdayReport.RECORD_READER_FACTORY;
-import static org.apache.nifi.processors.workday.GetWorkdayReport.RECORD_WRITER_FACTORY;
-import static org.apache.nifi.processors.workday.GetWorkdayReport.STATUS_CODE;
-import static org.apache.nifi.processors.workday.GetWorkdayReport.SUCCESS;
-import static org.apache.nifi.processors.workday.GetWorkdayReport.WEB_CLIENT_SERVICE;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
+import mockwebserver3.MockResponse;
+import mockwebserver3.MockWebServer;
+import mockwebserver3.RecordedRequest;
 import org.apache.nifi.csv.CSVRecordSetWriter;
 import org.apache.nifi.flowfile.attributes.CoreAttributes;
 import org.apache.nifi.json.JsonTreeReader;
@@ -62,6 +39,30 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Answers;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
+
+import static org.apache.nifi.processors.workday.GetWorkdayReport.FAILURE;
+import static org.apache.nifi.processors.workday.GetWorkdayReport.GET_WORKDAY_REPORT_JAVA_EXCEPTION_CLASS;
+import static org.apache.nifi.processors.workday.GetWorkdayReport.GET_WORKDAY_REPORT_JAVA_EXCEPTION_MESSAGE;
+import static org.apache.nifi.processors.workday.GetWorkdayReport.HEADER_AUTHORIZATION;
+import static org.apache.nifi.processors.workday.GetWorkdayReport.ORIGINAL;
+import static org.apache.nifi.processors.workday.GetWorkdayReport.RECORD_COUNT;
+import static org.apache.nifi.processors.workday.GetWorkdayReport.RECORD_READER_FACTORY;
+import static org.apache.nifi.processors.workday.GetWorkdayReport.RECORD_WRITER_FACTORY;
+import static org.apache.nifi.processors.workday.GetWorkdayReport.STATUS_CODE;
+import static org.apache.nifi.processors.workday.GetWorkdayReport.SUCCESS;
+import static org.apache.nifi.processors.workday.GetWorkdayReport.WEB_CLIENT_SERVICE;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 class GetWorkdayReportTest {
 
     private static final String LOCALHOST = "localhost";
@@ -79,14 +80,15 @@ class GetWorkdayReportTest {
     private MockWebServer mockWebServer;
 
     @BeforeEach
-    public void setRunner() {
+    public void setRunner() throws IOException {
         runner = TestRunners.newTestRunner(new GetWorkdayReport());
         mockWebServer = new MockWebServer();
+        mockWebServer.start();
     }
 
     @AfterEach
     public void shutdownServer() throws IOException {
-        mockWebServer.shutdown();
+        mockWebServer.close();
     }
 
     @Nested
@@ -221,7 +223,9 @@ class GetWorkdayReportTest {
         withWebClientService();
         runner.setProperty(GetWorkdayReport.REPORT_URL, getMockWebServerUrl());
 
-        mockWebServer.enqueue(new MockResponse().setResponseCode(500));
+        mockWebServer.enqueue(new MockResponse.Builder()
+                .code(500)
+                .build());
 
         runner.run();
 
@@ -239,7 +243,9 @@ class GetWorkdayReportTest {
         withWebClientService();
         runner.setProperty(GetWorkdayReport.REPORT_URL, getMockWebServerUrl());
 
-        mockWebServer.enqueue(new MockResponse().setResponseCode(500));
+        mockWebServer.enqueue(new MockResponse.Builder()
+                .code(500)
+                .build());
 
         runner.enqueue("test");
         runner.run();
@@ -279,7 +285,11 @@ class GetWorkdayReportTest {
         runner.setProperty(GetWorkdayReport.REPORT_URL, getMockWebServerUrl());
 
         String content = "id,name\n1,2";
-        mockWebServer.enqueue(new MockResponse().setResponseCode(200).setBody(content).setHeader(CONTENT_TYPE, TEXT_CSV));
+        mockWebServer.enqueue(new MockResponse.Builder()
+                .code(200)
+                .body(content)
+                .addHeader(CONTENT_TYPE, TEXT_CSV)
+                .build());
 
         runner.run();
 
@@ -304,7 +314,11 @@ class GetWorkdayReportTest {
         runner.setProperty(GetWorkdayReport.REPORT_URL, getMockWebServerUrl());
 
         String content = "id,name\n1,2";
-        mockWebServer.enqueue(new MockResponse().setResponseCode(200).setBody(content).setHeader(CONTENT_TYPE, TEXT_CSV));
+        mockWebServer.enqueue(new MockResponse.Builder()
+                .code(200)
+                .body(content)
+                .addHeader(CONTENT_TYPE, TEXT_CSV)
+                .build());
         runner.enqueue("");
 
         runner.run();
@@ -336,7 +350,11 @@ class GetWorkdayReportTest {
 
         String jsonContent = "{\"id\": 1, \"name\": \"test\"}";
         String csvContent = "id,name\n1,test\n";
-        mockWebServer.enqueue(new MockResponse().setResponseCode(200).setBody(jsonContent).setHeader(CONTENT_TYPE, APPLICATION_JSON));
+        mockWebServer.enqueue(new MockResponse.Builder()
+                .code(200)
+                .body(jsonContent)
+                .addHeader(CONTENT_TYPE, APPLICATION_JSON)
+                .build());
 
         runner.run();
 
@@ -361,12 +379,15 @@ class GetWorkdayReportTest {
         runner.setProperty(GetWorkdayReport.AUTH_TYPE, GetWorkdayReport.OAUTH_TYPE);
         withAccessTokenProvider();
 
-        mockWebServer.enqueue(new MockResponse().setResponseCode(200).setHeader(CONTENT_TYPE, APPLICATION_JSON));
+        mockWebServer.enqueue(new MockResponse.Builder()
+                .code(200)
+                .addHeader(CONTENT_TYPE, APPLICATION_JSON)
+                .build());
 
         runner.run();
 
         RecordedRequest recordedRequest = mockWebServer.takeRequest(1, TimeUnit.SECONDS);
-        String authorization = recordedRequest.getHeader(HEADER_AUTHORIZATION);
+        String authorization = recordedRequest.getHeaders().get(HEADER_AUTHORIZATION);
         assertNotNull(authorization, "Authorization Header not found");
 
         Pattern bearerPattern = Pattern.compile("^Bearer \\S+$");
@@ -381,12 +402,15 @@ class GetWorkdayReportTest {
         withWebClientService();
         runner.setProperty(GetWorkdayReport.REPORT_URL, getMockWebServerUrl());
 
-        mockWebServer.enqueue(new MockResponse().setResponseCode(200).setHeader(CONTENT_TYPE, APPLICATION_JSON));
+        mockWebServer.enqueue(new MockResponse.Builder()
+                .code(200)
+                .addHeader(CONTENT_TYPE, APPLICATION_JSON)
+                .build());
 
         runner.run();
 
         RecordedRequest recordedRequest = mockWebServer.takeRequest(1, TimeUnit.SECONDS);
-        String authorization = recordedRequest.getHeader(HEADER_AUTHORIZATION);
+        String authorization = recordedRequest.getHeaders().get(HEADER_AUTHORIZATION);
         assertNotNull(authorization, "Authorization Header not found");
 
         Pattern basicAuthPattern = Pattern.compile("^Basic \\S+$");

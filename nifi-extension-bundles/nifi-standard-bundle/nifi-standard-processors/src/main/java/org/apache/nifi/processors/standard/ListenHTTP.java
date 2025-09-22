@@ -88,15 +88,19 @@ import java.util.regex.Pattern;
 
 @InputRequirement(Requirement.INPUT_FORBIDDEN)
 @Tags({"ingest", "http", "https", "rest", "listen"})
-@CapabilityDescription("Starts an HTTP Server and listens on a given base path to transform incoming requests into FlowFiles. "
-        + "The default URI of the Service will be http://{hostname}:{port}/contentListener. Only HEAD and POST requests are "
-        + "supported. GET, PUT, DELETE, OPTIONS and TRACE will result in an error and the HTTP response status code 405; "
-        + "CONNECT will also result in an error and the HTTP response status code 400. "
-        + "GET is supported on <service_URI>/healthcheck. If the service is available, it returns \"200 OK\" with the content \"OK\". "
-        + "The health check functionality can be configured to be accessible via a different port. "
-        + "For details see the documentation of the \"Listening Port for health check requests\" property. "
-        + "A Record Reader and Record Writer property can be enabled on the processor to process incoming requests as records. "
-        + "Record processing is not allowed for multipart requests and request in FlowFileV3 format (minifi).")
+@CapabilityDescription("""
+        Starts an HTTP Server and listens on a given base path to transform incoming requests into FlowFiles.
+        The default URI of the Service will be http://{hostname}:{port}/contentListener. Only HEAD and POST requests are
+        supported. GET, PUT, DELETE, OPTIONS and TRACE will result in an error and the HTTP response status code 405;
+        CONNECT will also result in an error and the HTTP response status code 400.
+        GET is supported on <service_URI>/healthcheck. If the service is available, it returns \"200 OK\" with the content \"OK\".
+        The health check functionality can be configured to be accessible via a different port.
+        For details, see the documentation of the \"Listening Port for health check requests\" property.
+        A Record Reader and Record Writer property can be enabled on the processor to process incoming requests as records.
+        Record processing is not allowed for multipart requests and request in FlowFileV3 format (minifi).
+        If the incoming request contains a FlowFileV3 package format, the data will be unpacked automatically into individual
+        FlowFile(s) contained within the package; the original FlowFile names are restored.
+        """)
 @UseCase(
         description = "Unpack FlowFileV3 content received in a POST",
         keywords = {"flowfile", "flowfilev3", "unpack"},
@@ -446,8 +450,7 @@ public class ListenHTTP extends AbstractSessionFactoryProcessor {
         final int maxThreadPoolSize = context.getProperty(MAX_THREAD_POOL_SIZE).asInteger();
         final int requestHeaderSize = context.getProperty(REQUEST_HEADER_MAX_SIZE).asDataSize(DataUnit.B).intValue();
 
-        final PropertyValue clientAuthenticationProperty = context.getProperty(CLIENT_AUTHENTICATION);
-        final ClientAuthentication clientAuthentication = getClientAuthentication(sslContextProvider, clientAuthenticationProperty);
+        final ClientAuthentication clientAuthentication = getClientAuthentication(sslContextProvider, context);
 
         // thread pool for the jetty instance
         final QueuedThreadPool threadPool = new QueuedThreadPool(maxThreadPoolSize);
@@ -458,7 +461,9 @@ public class ListenHTTP extends AbstractSessionFactoryProcessor {
 
         // get the configured port
         final int port = context.getProperty(PORT).evaluateAttributeExpressions().asInteger();
-        final HttpProtocolStrategy httpProtocolStrategy = context.getProperty(HTTP_PROTOCOL_STRATEGY).asAllowableValue(HttpProtocolStrategy.class);
+        final HttpProtocolStrategy httpProtocolStrategy = sslContextProvider == null
+                ? HttpProtocolStrategy.valueOf(HTTP_PROTOCOL_STRATEGY.getDefaultValue())
+                : context.getProperty(HTTP_PROTOCOL_STRATEGY).asAllowableValue(HttpProtocolStrategy.class);
         final ServerConnector connector = createServerConnector(server,
                 port,
                 requestHeaderSize,
@@ -537,18 +542,25 @@ public class ListenHTTP extends AbstractSessionFactoryProcessor {
     }
 
     private ClientAuthentication getClientAuthentication(final SSLContextProvider sslContextProvider,
-                                                         final PropertyValue clientAuthenticationProperty) {
+                                                         final ProcessContext context) {
         ClientAuthentication clientAuthentication = ClientAuthentication.NONE;
-        if (clientAuthenticationProperty.isSet()) {
-            clientAuthentication = ClientAuthentication.valueOf(clientAuthenticationProperty.getValue());
-            if (ClientAuthentication.AUTO == clientAuthentication && sslContextProvider != null) {
-                final X509TrustManager trustManager = sslContextProvider.createTrustManager();
-                if (isTrustManagerConfigured(trustManager)) {
-                    clientAuthentication = ClientAuthentication.REQUIRED;
-                    getLogger().debug("Client Authentication REQUIRED from SSLContextService Trust Manager configuration");
+
+        if (sslContextProvider != null) {
+            final PropertyValue clientAuthenticationProperty = context.getProperty(CLIENT_AUTHENTICATION);
+
+            if (clientAuthenticationProperty.isSet()) {
+                clientAuthentication = ClientAuthentication.valueOf(clientAuthenticationProperty.getValue());
+
+                if (clientAuthentication == ClientAuthentication.AUTO) {
+                    final X509TrustManager trustManager = sslContextProvider.createTrustManager();
+                    if (isTrustManagerConfigured(trustManager)) {
+                        clientAuthentication = ClientAuthentication.REQUIRED;
+                        getLogger().debug("Client Authentication REQUIRED from SSLContextService Trust Manager configuration");
+                    }
                 }
             }
         }
+
         return clientAuthentication;
     }
 

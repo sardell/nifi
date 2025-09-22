@@ -76,16 +76,13 @@ public class StandardReloadComponent implements ReloadComponent {
         // save the instance class loader to use it for calling OnRemoved on the existing processor
         final ClassLoader existingInstanceClassLoader = extensionManager.getInstanceClassLoader(id);
 
-        final StateManager stateManager = flowController.getStateManagerProvider().getStateManager(id);
+        final Class<?> componentClass = existingNode.getProcessor() == null ? null : existingNode.getProcessor().getClass();
+        final StateManager stateManager = flowController.getStateManagerProvider().getStateManager(id, componentClass);
         final StandardProcessContext processContext = new StandardProcessContext(existingNode, flowController.getControllerServiceProvider(),
             stateManager, () -> false, flowController);
 
-        // call OnRemoved for the existing processor using the previous instance class loader
-        try (final NarCloseable ignored = NarCloseable.withComponentNarLoader(existingInstanceClassLoader)) {
-            ReflectionUtils.quietlyInvokeMethodsWithAnnotation(OnRemoved.class, existingNode.getProcessor(), processContext);
-        } finally {
-            extensionManager.closeURLClassLoader(id, existingInstanceClassLoader);
-        }
+        // Cleanup the URL ClassLoader for the existing processor instance.
+        extensionManager.closeURLClassLoader(id, existingInstanceClassLoader);
 
         // Ensure that we notify the Python Bridge that we're removing the old processor, if the Processor is Python based.
         // This way we can shutdown the Process if necessary before creating a new processor (which may then spawn a new process).
@@ -117,6 +114,7 @@ public class StandardReloadComponent implements ReloadComponent {
         existingNode.onConfigurationRestored(processContext);
 
         logger.debug("Triggering async validation of {} due to processor reload", existingNode);
+        existingNode.resetValidationState();
         flowController.getValidationTrigger().trigger(existingNode);
     }
 
@@ -175,6 +173,7 @@ public class StandardReloadComponent implements ReloadComponent {
         existingNode.refreshProperties();
 
         logger.debug("Triggering async validation of {} due to controller service reload", existingNode);
+        existingNode.resetValidationState();
         flowController.getValidationTrigger().triggerAsync(existingNode);
     }
 
@@ -223,6 +222,7 @@ public class StandardReloadComponent implements ReloadComponent {
         existingNode.refreshProperties();
 
         logger.debug("Triggering async validation of {} due to reporting task reload", existingNode);
+        existingNode.resetValidationState();
         flowController.getValidationTrigger().triggerAsync(existingNode);
     }
 
@@ -272,6 +272,7 @@ public class StandardReloadComponent implements ReloadComponent {
         existingNode.refreshProperties();
 
         logger.debug("Triggering async validation of {} due to flow analysis rule reload", existingNode);
+        existingNode.resetValidationState();
         flowController.getValidationTrigger().triggerAsync(existingNode);
     }
 
@@ -320,6 +321,7 @@ public class StandardReloadComponent implements ReloadComponent {
         existingNode.refreshProperties();
 
         logger.debug("Triggering async validation of {} due to parameter provider reload", existingNode);
+        existingNode.resetValidationState();
         flowController.getValidationTrigger().triggerAsync(existingNode);
     }
 
@@ -361,6 +363,7 @@ public class StandardReloadComponent implements ReloadComponent {
         existingNode.refreshProperties();
 
         logger.debug("Triggering async validation of {} due to flow registry client reload", existingNode);
+        existingNode.resetValidationState();
         flowController.getValidationTrigger().triggerAsync(existingNode);
 
     }

@@ -22,6 +22,7 @@ import org.apache.nifi.annotation.behavior.InputRequirement;
 import org.apache.nifi.annotation.behavior.WritesAttribute;
 import org.apache.nifi.annotation.behavior.WritesAttributes;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
+import org.apache.nifi.annotation.documentation.DeprecationNotice;
 import org.apache.nifi.annotation.documentation.Tags;
 import org.apache.nifi.annotation.lifecycle.OnScheduled;
 import org.apache.nifi.components.PropertyDescriptor;
@@ -61,6 +62,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Optional;
 
+@DeprecationNotice(reason = "NIFI-14846: Minimal usage and maintenance since initial implementation")
 @SideEffectFree
 @SupportsBatching
 @Tags({"geo", "geohash", "record"})
@@ -271,8 +273,6 @@ public class GeohashRecord extends AbstractProcessor {
             case SPLIT:
                 routingStrategyExecutor = new SplitRoutingStrategyExecutor();
                 break;
-            default:
-                throw new AssertionError();
         }
         enrichedCount = 0;
         unenrichedCount = 0;
@@ -317,7 +317,6 @@ public class GeohashRecord extends AbstractProcessor {
                 notMatchedWriter.beginRecordSet();
             }
 
-            int level = context.getProperty(GEOHASH_LEVEL).evaluateAttributeExpressions(input).asInteger();
             final String rawLatitudePath = context.getProperty(LATITUDE_RECORD_PATH).evaluateAttributeExpressions(input).getValue();
             RecordPath latitudePath = cache.getCompiled(rawLatitudePath);
             final String rawLongitudePath = context.getProperty(LONGITUDE_RECORD_PATH).evaluateAttributeExpressions(input).getValue();
@@ -330,6 +329,8 @@ public class GeohashRecord extends AbstractProcessor {
 
                 try {
                     if (encode) {
+                        int level = context.getProperty(GEOHASH_LEVEL).evaluateAttributeExpressions(input).asInteger();
+
                         Object encodedGeohash = getEncodedGeohash(latitudePath, longitudePath, record, format, level);
                         updated = updateRecord(GEOHASH_RECORD_PATH, encodedGeohash, record, paths);
                     } else {

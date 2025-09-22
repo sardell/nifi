@@ -54,13 +54,14 @@ public final class BulletinFactory {
         if (group == null) {
             return null;
         } else {
-            String path = group.getName();
+            StringBuilder path = new StringBuilder(group.getName());
             ProcessGroup parent = group.getParent();
             while (parent != null) {
-                path = parent.getName() + " / " + path;
+                path.insert(0, " / ");
+                path.insert(0, parent.getName());
                 parent = parent.getParent();
             }
-            return path;
+            return path.toString();
         }
     }
 
@@ -117,19 +118,12 @@ public final class BulletinFactory {
     }
 
     private static ComponentType getComponentType(final Connectable connectable) {
-        switch (connectable.getConnectableType()) {
-            case REMOTE_INPUT_PORT:
-            case REMOTE_OUTPUT_PORT:
-                return ComponentType.REMOTE_PROCESS_GROUP;
-            case INPUT_PORT:
-                return ComponentType.INPUT_PORT;
-            case OUTPUT_PORT:
-                return ComponentType.OUTPUT_PORT;
-            case STATELESS_GROUP:
-                return ComponentType.PROCESS_GROUP;
-            case PROCESSOR:
-            default:
-                return ComponentType.PROCESSOR;
-        }
+        return switch (connectable.getConnectableType()) {
+            case REMOTE_INPUT_PORT, REMOTE_OUTPUT_PORT -> ComponentType.REMOTE_PROCESS_GROUP;
+            case INPUT_PORT -> ComponentType.INPUT_PORT;
+            case OUTPUT_PORT -> ComponentType.OUTPUT_PORT;
+            case STATELESS_GROUP -> ComponentType.PROCESS_GROUP;
+            default -> ComponentType.PROCESSOR;
+        };
     }
 }

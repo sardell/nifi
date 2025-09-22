@@ -156,7 +156,7 @@ public class TailFile extends AbstractProcessor {
             .expressionLanguageSupported(NONE)
             .required(true)
             .allowableValues(MODE_SINGLEFILE, MODE_MULTIFILE)
-            .defaultValue(MODE_SINGLEFILE.getValue())
+            .defaultValue(MODE_SINGLEFILE)
             .build();
 
     static final PropertyDescriptor FILENAME = new Builder()
@@ -202,7 +202,7 @@ public class TailFile extends AbstractProcessor {
                     + "appropriately in order to ensure that all data is consumed without duplicating data upon restart of NiFi")
             .required(true)
             .allowableValues(LOCATION_LOCAL, LOCATION_REMOTE)
-            .defaultValue(LOCATION_LOCAL.getValue())
+            .defaultValue(LOCATION_LOCAL)
             .build();
 
     static final PropertyDescriptor START_POSITION = new Builder()
@@ -210,7 +210,7 @@ public class TailFile extends AbstractProcessor {
             .description("When the Processor first begins to tail data, this property specifies where the Processor should begin reading data. Once data has been ingested from a file, "
                     + "the Processor will continue from the last point from which it has received data.")
             .allowableValues(START_BEGINNING_OF_TIME, START_CURRENT_FILE, START_CURRENT_TIME)
-            .defaultValue(START_CURRENT_FILE.getValue())
+            .defaultValue(START_CURRENT_FILE)
             .required(true)
             .build();
 
@@ -262,7 +262,6 @@ public class TailFile extends AbstractProcessor {
 
     static final PropertyDescriptor LINE_START_PATTERN = new Builder()
         .name("Line Start Pattern")
-        .displayName("Line Start Pattern")
         .description("A Regular Expression to match against the start of a log line. If specified, any line that matches the expression, and any following lines, will be buffered until another line" +
             " matches the Expression. In doing this, we can avoid splitting apart multi-line messages in the file. This assumes that the data is in UTF-8 format.")
         .required(false)
@@ -273,7 +272,6 @@ public class TailFile extends AbstractProcessor {
 
     static final PropertyDescriptor MAX_BUFFER_LENGTH = new Builder()
         .name("Max Buffer Size")
-        .displayName("Max Buffer Size")
         .description("When using the Line Start Pattern, there may be situations in which the data in the file being tailed never matches the Regular Expression. This would result in the processor " +
             "buffering all data from the tailed file, which can quickly exhaust the heap. To avoid this, the Processor will buffer only up to this amount of data before flushing the buffer, even if" +
             " it means ingesting partial data from the file.")
@@ -399,10 +397,13 @@ public class TailFile extends AbstractProcessor {
 
     @OnScheduled
     public void compileRegex(final ProcessContext context) {
-        final String regex = context.getProperty(LINE_START_PATTERN).getValue();
-        lineStartPattern = (regex == null) ? null : Pattern.compile(regex);
+        if (context.getProperty(MODE).getValue().equals(MODE_SINGLEFILE.getValue())) {
+            final String patternString = context.getProperty(LINE_START_PATTERN).getValue();
+            lineStartPattern = patternString == null ? null : Pattern.compile(patternString);
+        }
 
-        this.maxBufferBytes = context.getProperty(MAX_BUFFER_LENGTH).asDataSize(DataUnit.B).longValue();
+        this.maxBufferBytes = lineStartPattern == null
+                ? Long.MAX_VALUE : context.getProperty(MAX_BUFFER_LENGTH).asDataSize(DataUnit.B).longValue();
         this.preAllocatedBufferSize = context.getProperty(PRE_ALLOCATED_BUFFER_SIZE).asDataSize(DataUnit.B).intValue();
     }
 
@@ -1029,6 +1030,8 @@ public class TailFile extends AbstractProcessor {
                                 throw new NulCharacterEncounteredException(rePos);
                             }
                         }
+                        // fallthrough
+                        // is intentional since if reReadOnNul is false, ASCII NUL is to be treated as a regular character
                         default: {
                             if (seenCR) {
                                 seenCR = false;

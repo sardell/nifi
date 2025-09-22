@@ -30,7 +30,6 @@ import static org.apache.commons.codec.digest.DigestUtils.sha512Hex;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.nifi.c2.protocol.api.ResourceType.ASSET;
 import static org.apache.nifi.c2.protocol.api.ResourceType.EXTENSION;
-import static org.apache.nifi.minifi.c2.command.syncresource.FileResourceRepository.ASSET_REPOSITORY_DIRECTORY;
 import static org.apache.nifi.minifi.c2.command.syncresource.FileResourceRepository.RESOURCE_REPOSITORY_FILE_NAME;
 import static org.apache.nifi.util.StringUtils.EMPTY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -72,7 +71,6 @@ public class FileResourceRepositoryTest {
 
     private C2Serializer c2Serializer;
 
-    private Path assetDirectory;
     private Path assetRepositoryDirectory;
     private Path extensionDirectory;
     private Path repositoryFile;
@@ -83,8 +81,7 @@ public class FileResourceRepositoryTest {
         c2Serializer = new C2JacksonSerializer();
         configDirectoryPath = testBaseDirectory.resolve("conf");
         createDirectories(configDirectoryPath);
-        assetDirectory = testBaseDirectory.resolve("assets");
-        assetRepositoryDirectory = assetDirectory.resolve(ASSET_REPOSITORY_DIRECTORY);
+        assetRepositoryDirectory = testBaseDirectory.resolve("assets").resolve("repository");
         createDirectories(assetRepositoryDirectory);
         extensionDirectory = testBaseDirectory.resolve("extensions");
         createDirectories(extensionDirectory);
@@ -381,6 +378,28 @@ public class FileResourceRepositoryTest {
         assertTrue(result.isEmpty());
     }
 
+    @Test
+    public void testGetRelativePathReturnsEmptyInCaseOfResourceNotAvailable() throws IOException {
+        FileResourceRepository testRepository = createTestRepository();
+
+        Optional<Path> relativePath = testRepository.getAbsolutePath("non_existing_resource_id");
+
+        assertTrue(relativePath.isEmpty());
+    }
+
+    @Test
+    public void testGetRelativePath() throws IOException {
+        FileResourceRepository testRepository = createTestRepository();
+        ResourceItem resourceItem = resourceItem("resource1", "subfolder", ASSET);
+        Path resourceItemPath = createResourceBinary(resourceItem, RESOURCE_BINARY_CONTENT);
+        testRepository.addResourceItem(resourceItem);
+
+        Optional<Path> relativePath = testRepository.getAbsolutePath("resource1");
+
+        assertTrue(relativePath.isPresent());
+        assertEquals(resourceItemPath.toString(), relativePath.get().toString());
+    }
+
     private ResourceRepositoryDescriptor loadRepository() throws IOException {
         return c2Serializer.deserialize(readString(repositoryFile), ResourceRepositoryDescriptor.class).orElse(null);
     }
@@ -390,7 +409,7 @@ public class FileResourceRepositoryTest {
     }
 
     private FileResourceRepository createTestRepository() {
-        return new FileResourceRepository(assetDirectory, extensionDirectory, configDirectoryPath, c2Serializer);
+        return new FileResourceRepository(assetRepositoryDirectory, extensionDirectory, configDirectoryPath, c2Serializer);
     }
 
     private ResourcesGlobalHash resourcesGlobalHash(String digest, String hashType) {

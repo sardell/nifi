@@ -17,9 +17,9 @@
 
 <div class="flex flex-col">
     <nav class="nifi-navigation select-none">
-        <div class="flex justify-between items-center h-16 pl-4">
+        <div class="flex justify-between items-center h-[64px] pl-4">
             <div class="flex">
-                <div class="h-16 w-28 mr-6 relative">
+                <div class="h-[64px] w-[112px] mr-6 relative">
                     <img
                         ngSrc="assets/icons/nifi-logo.svg"
                         fill
@@ -223,7 +223,7 @@
     </nav>
     @if (backNavigation(); as navigation) {
         <div class="pl-2 py-2">
-            <a [routerLink]="navigation.route">
+            <a (click)="popBackNavigation()" [routerLink]="navigation.route">
                 <i class="fa fa-arrow-left primary-color mr-2"></i>
                 Back to {{ navigation.context }}
             </a>

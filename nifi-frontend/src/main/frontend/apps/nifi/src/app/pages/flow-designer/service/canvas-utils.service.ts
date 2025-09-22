@@ -1478,11 +1478,20 @@ export class CanvasUtils {
         let lineHeight = height;
 
         for (const fullLine of lines) {
-            const words: string[] = fullLine.split(/\s+/).reverse();
+            // Extract and preserve only the leading whitespace at the start of the line
+            const trimmedLine = fullLine.trimStart();
+            const leadingWhitespace = fullLine.slice(0, fullLine.length - trimmedLine.length);
+
+            // Split words normally, letting internal whitespace collapse
+            const words = trimmedLine.split(/\s+/).reverse();
+            if (leadingWhitespace.length > 0 && words.length > 0) {
+                words[words.length - 1] = leadingWhitespace + words[words.length - 1]; // Prepend leading space to the first word
+            }
 
             let newLine = true;
             let line: string[] = [];
-            let tspan = selection.append('tspan').attr('x', x).attr('width', width);
+
+            let tspan = selection.append('tspan').attr('x', x).attr('width', width).attr('xml:space', 'preserve');
 
             // go through each word
             let word = words.pop();
@@ -1490,7 +1499,6 @@ export class CanvasUtils {
             while (word) {
                 // add the current word
                 line.push(word);
-
                 // update the label text
                 tspan.text(line.join(' '));
 
@@ -1517,7 +1525,12 @@ export class CanvasUtils {
                     tspan.text(line.join(' '));
 
                     // create the tspan for the next line
-                    tspan = selection.append('tspan').attr('x', x).attr('dy', '1.2em').attr('width', width);
+                    tspan = selection
+                        .append('tspan')
+                        .attr('x', x)
+                        .attr('dy', '1.2em')
+                        .attr('width', width)
+                        .attr('xml:space', 'preserve');
 
                     // if we've reached the last line, use single line ellipsis
                     if (i++ >= lineCount) {
@@ -1545,7 +1558,6 @@ export class CanvasUtils {
             if (newLine) {
                 // set the label height
                 tspan.attr('y', lineHeight * i++);
-                newLine = false;
             }
 
             if (i >= lineCount) {
@@ -2078,6 +2090,10 @@ export class CanvasUtils {
      * @return {boolean}                       Whether the selection supports starting flow versioning
      */
     public supportsStartFlowVersioning(selection: d3.Selection<any, any, any, any>): boolean {
+        if (!this.canVersionFlows()) {
+            return false;
+        }
+
         if (!this.supportsFlowVersioning(selection)) {
             return false;
         }
@@ -2104,10 +2120,6 @@ export class CanvasUtils {
      * @return {boolean}                       Whether the selection supports flow versioning
      */
     public supportsFlowVersioning(selection: d3.Selection<any, any, any, any>): boolean {
-        if (!this.canVersionFlows()) {
-            return false;
-        }
-
         if (selection.empty()) {
             // prevent versioning of the root group
             if (!this.getParentProcessGroupId()) {
@@ -2132,6 +2144,10 @@ export class CanvasUtils {
      * @return {boolean}                       Whether the selection supports commit.
      */
     public supportsCommitFlowVersion(selection: d3.Selection<any, any, any, any>): boolean {
+        if (!this.canVersionFlows()) {
+            return false;
+        }
+
         const versionControlInformation = this.getFlowVersionControlInformation(selection);
 
         // check the selection for version control information
@@ -2145,6 +2161,10 @@ export class CanvasUtils {
      * @return {boolean}                       Whether the selection supports force commit.
      */
     public supportsForceCommitFlowVersion(selection: d3.Selection<any, any, any, any>): boolean {
+        if (!this.canVersionFlows()) {
+            return false;
+        }
+
         const versionControlInformation = this.getFlowVersionControlInformation(selection);
 
         // check the selection for version control information
@@ -2158,6 +2178,10 @@ export class CanvasUtils {
      * @return {boolean}                       Whether the selection has local changes.
      */
     public hasLocalChanges(selection: d3.Selection<any, any, any, any>): boolean {
+        if (!this.canVersionFlows()) {
+            return false;
+        }
+
         const versionControlInformation = this.getFlowVersionControlInformation(selection);
 
         // check the selection for version control information
@@ -2175,6 +2199,10 @@ export class CanvasUtils {
      * @return {boolean}                       Whether the selection supports change flow version.
      */
     public supportsChangeFlowVersion(selection: d3.Selection<any, any, any, any>): boolean {
+        if (!this.canVersionFlows()) {
+            return false;
+        }
+
         const versionControlInformation = this.getFlowVersionControlInformation(selection);
 
         return (

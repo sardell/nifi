@@ -32,6 +32,7 @@ import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.components.Validator;
 import org.apache.nifi.expression.ExpressionLanguageScope;
 import org.apache.nifi.flowfile.FlowFile;
+import org.apache.nifi.migration.PropertyConfiguration;
 import org.apache.nifi.processor.ProcessContext;
 import org.apache.nifi.processor.ProcessSession;
 import org.apache.nifi.processor.Relationship;
@@ -112,8 +113,7 @@ public class PublishAMQP extends AbstractAMQPProcessor<AMQPPublisher> {
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .build();
     public static final PropertyDescriptor HEADER_SEPARATOR = new PropertyDescriptor.Builder()
-            .name("header.separator")
-            .displayName("Header Separator")
+            .name("Header Separator")
             .description("The character that is used to split key-value for headers. The value must only one character. "
                     + "Otherwise you will get an error message")
             .defaultValue(",")
@@ -171,15 +171,10 @@ public class PublishAMQP extends AbstractAMQPProcessor<AMQPPublisher> {
             throw new IllegalArgumentException("Failed to determine 'routing key' with provided value '"
                 + context.getProperty(ROUTING_KEY) + "' after evaluating it as expression against incoming FlowFile.");
         }
+
         InputHeaderSource selectedHeaderSource = context.getProperty(HEADERS_SOURCE).asAllowableValue(InputHeaderSource.class);
-        Character headerSeparator = null;
-        Pattern pattern = null;
-        if (context.getProperty(HEADERS_PATTERN).isSet()) {
-            pattern = Pattern.compile(context.getProperty(HEADERS_PATTERN).evaluateAttributeExpressions().getValue());
-        }
-        if (context.getProperty(HEADER_SEPARATOR).isSet()) {
-            headerSeparator = context.getProperty(HEADER_SEPARATOR).getValue().charAt(0);
-        }
+        final Pattern pattern = getPattern(context, selectedHeaderSource);
+        final Character headerSeparator = getHeaderSeparator(context, selectedHeaderSource);
 
         final BasicProperties amqpProperties = extractAmqpPropertiesFromFlowFile(flowFile, selectedHeaderSource, headerSeparator, pattern);
 
@@ -200,7 +195,6 @@ public class PublishAMQP extends AbstractAMQPProcessor<AMQPPublisher> {
         session.getProvenanceReporter().send(flowFile, connection.toString() + "/E:" + exchange + "/RK:" + routingKey);
     }
 
-
     @Override
     protected List<PropertyDescriptor> getSupportedPropertyDescriptors() {
         return PROPERTY_DESCRIPTORS;
@@ -214,6 +208,12 @@ public class PublishAMQP extends AbstractAMQPProcessor<AMQPPublisher> {
     @Override
     protected AMQPPublisher createAMQPWorker(final ProcessContext context, final Connection connection) {
         return new AMQPPublisher(connection, getLogger());
+    }
+
+    @Override
+    public void migrateProperties(final PropertyConfiguration config) {
+        super.migrateProperties(config);
+        config.renameProperty("header.separator", HEADER_SEPARATOR.getName());
     }
 
     /**
@@ -327,6 +327,26 @@ public class PublishAMQP extends AbstractAMQPProcessor<AMQPPublisher> {
         }
         return headers;
     }
+
+    protected Pattern getPattern(ProcessContext context, InputHeaderSource selectedHeaderSource) {
+        return switch (selectedHeaderSource) {
+            case FLOWFILE_ATTRIBUTES -> Pattern.compile(context.getProperty(HEADERS_PATTERN).evaluateAttributeExpressions().getValue());
+            case AMQP_HEADERS_ATTRIBUTE -> null;
+        };
+    }
+
+    protected Character getHeaderSeparator(ProcessContext context, InputHeaderSource selectedHeaderSource) {
+        return switch (selectedHeaderSource) {
+            case FLOWFILE_ATTRIBUTES -> null;
+            case AMQP_HEADERS_ATTRIBUTE -> {
+                if (context.getProperty(HEADER_SEPARATOR).isSet()) {
+                    yield context.getProperty(HEADER_SEPARATOR).getValue().charAt(0);
+                }
+                yield null;
+            }
+        };
+    }
+
     public enum InputHeaderSource implements DescribedValue {
 
         FLOWFILE_ATTRIBUTES("FlowFile Attributes", "Select FlowFile Attributes based on regular expression pattern for event headers. Key of the matching attribute will be used as header key"),

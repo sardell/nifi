@@ -69,6 +69,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -105,11 +106,14 @@ public class ConsumeMQTT extends AbstractMQTTProcessor {
     public final static String RECORD_COUNT_KEY = "record.count";
     public final static String BROKER_ATTRIBUTE_KEY = "mqtt.broker";
     public final static String TOPIC_ATTRIBUTE_KEY = "mqtt.topic";
+    public final static String TOPIC_SEGMENT_PREFIX = "mqtt.topic.segment.";
+    public final static String TOPIC_SEPARATOR = "/";
     public final static String QOS_ATTRIBUTE_KEY = "mqtt.qos";
     public final static String IS_DUPLICATE_ATTRIBUTE_KEY = "mqtt.isDuplicate";
     public final static String IS_RETAINED_ATTRIBUTE_KEY = "mqtt.isRetained";
 
     public final static String TOPIC_FIELD_KEY = "_topic";
+    public final static String TOPIC_SEGMENTS_FIELD_KEY = "_topicSegments";
     public final static String QOS_FIELD_KEY = "_qos";
     public final static String IS_DUPLICATE_FIELD_KEY = "_isDuplicate";
     public final static String IS_RETAINED_FIELD_KEY = "_isRetained";
@@ -192,7 +196,7 @@ public class ConsumeMQTT extends AbstractMQTTProcessor {
     private volatile String topicFilter;
     private final AtomicBoolean scheduled = new AtomicBoolean(false);
 
-    private volatile LinkedBlockingQueue<ReceivedMqttMessage> mqttQueue;
+    private volatile BlockingQueue<ReceivedMqttMessage> mqttQueue;
 
     public static final Relationship REL_MESSAGE = new Relationship.Builder()
             .name("Message")
@@ -248,7 +252,7 @@ public class ConsumeMQTT extends AbstractMQTTProcessor {
                     logger.warn("New receive buffer size ({}) is smaller than the number of messages pending ({}), ignoring resize request. Processor will be invalid.", newSize, msgPending);
                     return;
                 }
-                LinkedBlockingQueue<ReceivedMqttMessage> newBuffer = new LinkedBlockingQueue<>(newSize);
+                BlockingQueue<ReceivedMqttMessage> newBuffer = new LinkedBlockingQueue<>(newSize);
                 mqttQueue.drainTo(newBuffer);
                 mqttQueue = newBuffer;
             }
@@ -300,7 +304,7 @@ public class ConsumeMQTT extends AbstractMQTTProcessor {
     }
 
     @Override
-    public final List<PropertyDescriptor> getSupportedPropertyDescriptors() {
+    public List<PropertyDescriptor> getSupportedPropertyDescriptors() {
         return PROPERTY_DESCRIPTORS;
     }
 
@@ -440,13 +444,27 @@ public class ConsumeMQTT extends AbstractMQTTProcessor {
 
         final Map<String, String> attrs = new HashMap<>();
         attrs.put(BROKER_ATTRIBUTE_KEY, clientProperties.getRawBrokerUris());
-        attrs.put(TOPIC_ATTRIBUTE_KEY, mqttMessage.getTopic());
+        addTopicAttributes(attrs, mqttMessage.getTopic());
         attrs.put(QOS_ATTRIBUTE_KEY, String.valueOf(mqttMessage.getQos()));
         attrs.put(IS_DUPLICATE_ATTRIBUTE_KEY, String.valueOf(mqttMessage.isDuplicate()));
         attrs.put(IS_RETAINED_ATTRIBUTE_KEY, String.valueOf(mqttMessage.isRetained()));
 
         messageFlowfile = session.putAllAttributes(messageFlowfile, attrs);
         return messageFlowfile;
+    }
+
+    void addTopicAttributes(
+            final Map<String, String> attributes,
+            final String topic
+    ) {
+        attributes.put(TOPIC_ATTRIBUTE_KEY, topic);
+
+        if (topic != null && !topic.isEmpty()) {
+            final String[] segments = topic.split(TOPIC_SEPARATOR, -1);
+            for (int topicSegmentIndex = 0; topicSegmentIndex < segments.length; topicSegmentIndex++) {
+                attributes.put(TOPIC_SEGMENT_PREFIX + topicSegmentIndex, segments[topicSegmentIndex]);
+            }
+        }
     }
 
     private void transferQueueRecord(final ProcessContext context, final ProcessSession session) {
@@ -500,6 +518,7 @@ public class ConsumeMQTT extends AbstractMQTTProcessor {
                                         final List<RecordField> fields = new ArrayList<>(writeSchema.getFields());
 
                                         fields.add(new RecordField(TOPIC_FIELD_KEY, RecordFieldType.STRING.getDataType()));
+                                        fields.add(new RecordField(TOPIC_SEGMENTS_FIELD_KEY, RecordFieldType.ARRAY.getArrayDataType(RecordFieldType.STRING.getDataType())));
                                         fields.add(new RecordField(QOS_FIELD_KEY, RecordFieldType.INT.getDataType()));
                                         fields.add(new RecordField(IS_DUPLICATE_FIELD_KEY, RecordFieldType.BOOLEAN.getDataType()));
                                         fields.add(new RecordField(IS_RETAINED_FIELD_KEY, RecordFieldType.BOOLEAN.getDataType()));
@@ -518,7 +537,7 @@ public class ConsumeMQTT extends AbstractMQTTProcessor {
 
                             try {
                                 if (context.getProperty(ADD_ATTRIBUTES_AS_FIELDS).asBoolean()) {
-                                    record.setValue(TOPIC_FIELD_KEY, mqttMessage.getTopic());
+                                    addTopicFields(record, mqttMessage.getTopic());
                                     record.setValue(QOS_FIELD_KEY, mqttMessage.getQos());
                                     record.setValue(IS_RETAINED_FIELD_KEY, mqttMessage.isRetained());
                                     record.setValue(IS_DUPLICATE_FIELD_KEY, mqttMessage.isDuplicate());
@@ -589,6 +608,18 @@ public class ConsumeMQTT extends AbstractMQTTProcessor {
         final int count = recordCount.get();
         session.adjustCounter(COUNTER_RECORDS_PROCESSED, count, false);
         logger.info("Successfully processed {} records for {}", count, flowFile);
+    }
+
+    private void addTopicFields(
+            final Record record,
+            final String topic
+    ) {
+        record.setValue(TOPIC_FIELD_KEY, topic);
+
+        if (topic != null && !topic.isEmpty()) {
+            final String[] topicSegments = topic.split(TOPIC_SEPARATOR, -1);
+            record.setValue(TOPIC_SEGMENTS_FIELD_KEY, topicSegments);
+        }
     }
 
     private void closeWriter(final RecordSetWriter writer) {

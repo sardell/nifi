@@ -22,7 +22,9 @@ import {
     ComponentRunStatusRequest,
     ControllerServiceStateRequest,
     CreateComponentRequest,
+    CreateComponentResponse,
     CreateConnection,
+    CreateLabelRequest,
     CreatePortRequest,
     CreateProcessGroupRequest,
     CreateProcessorRequest,
@@ -117,18 +119,22 @@ export class FlowService implements PropertyDescriptorRetriever {
         });
     }
 
-    createLabel(processGroupId = 'root', createLabel: CreateComponentRequest): Observable<any> {
-        return this.httpClient.post(`${FlowService.API}/process-groups/${processGroupId}/labels`, {
-            revision: createLabel.revision,
-            disconnectedNodeAcknowledged: this.clusterConnectionService.isDisconnectionAcknowledged(),
-            component: {
-                position: createLabel.position
+    createLabel(processGroupId = 'root', createLabel: CreateLabelRequest) {
+        return this.httpClient.post<CreateComponentResponse>(
+            `${FlowService.API}/process-groups/${processGroupId}/labels`,
+            {
+                revision: createLabel.revision,
+                disconnectedNodeAcknowledged: this.clusterConnectionService.isDisconnectionAcknowledged(),
+                component: {
+                    position: createLabel.position,
+                    zIndex: createLabel.zIndex
+                }
             }
-        });
+        );
     }
 
     goToRemoteProcessGroup(goToRemoteProcessGroupRequest: GoToRemoteProcessGroupRequest) {
-        window.open(encodeURI(goToRemoteProcessGroupRequest.uri));
+        window.open(encodeURI(goToRemoteProcessGroupRequest.uri), '_blank', 'noreferrer');
     }
 
     createProcessor(processGroupId = 'root', createProcessor: CreateProcessorRequest): Observable<any> {
@@ -466,7 +472,9 @@ export class FlowService implements PropertyDescriptorRetriever {
 
     downloadFlow(downloadFlowRequest: DownloadFlowRequest): void {
         window.open(
-            `${FlowService.API}/process-groups/${downloadFlowRequest.processGroupId}/download?includeReferencedServices=${downloadFlowRequest.includeReferencedServices}`
+            `${FlowService.API}/process-groups/${downloadFlowRequest.processGroupId}/download?includeReferencedServices=${downloadFlowRequest.includeReferencedServices}`,
+            '_blank',
+            'noreferrer'
         );
     }
 }

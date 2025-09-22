@@ -104,7 +104,6 @@ public class LogAttribute extends AbstractProcessor {
             .build();
     public static final PropertyDescriptor OUTPUT_FORMAT = new PropertyDescriptor.Builder()
             .name("Output Format")
-            .displayName("Output Format")
             .description("Specifies the format to use for logging FlowFile attributes")
             .required(true)
             .allowableValues(OUTPUT_FORMAT_LINE_PER_ATTRIBUTE, OUTPUT_FORMAT_SINGLE_LINE)
@@ -119,7 +118,6 @@ public class LogAttribute extends AbstractProcessor {
             .build();
     static final PropertyDescriptor LOG_FLOWFILE_PROPERTIES = new PropertyDescriptor.Builder()
             .name("Log FlowFile Properties")
-            .displayName("Log FlowFile Properties")
             .description("Specifies whether or not to log FlowFile \"properties\", such as Entry Date, Lineage Start Date, and content size")
             .required(true)
             .allowableValues("true", "false")
@@ -158,7 +156,7 @@ public class LogAttribute extends AbstractProcessor {
 
     public static final String FIFTY_DASHES = "--------------------------------------------------";
 
-    public static enum DebugLevels {
+    public enum DebugLevels {
         trace, debug, info, warn, error
     }
 
@@ -267,9 +265,6 @@ public class LogAttribute extends AbstractProcessor {
                 break;
             case error:
                 logger.error(outputMessage);
-                break;
-            default:
-                logger.debug(outputMessage);
                 break;
         }
 

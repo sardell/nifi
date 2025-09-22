@@ -33,6 +33,7 @@ import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.expression.ExpressionLanguageScope;
 import org.apache.nifi.flowfile.FlowFile;
 import org.apache.nifi.flowfile.attributes.CoreAttributes;
+import org.apache.nifi.jolt.util.JoltTransformStrategy;
 import org.apache.nifi.jolt.util.TransformUtils;
 import org.apache.nifi.logging.ComponentLog;
 import org.apache.nifi.processor.DataUnit;
@@ -54,7 +55,7 @@ import java.util.stream.Stream;
 
 @SideEffectFree
 @SupportsBatching
-@Tags({"json", "jolt", "transform", "shiftr", "chainr", "defaultr", "removr", "cardinality", "sort"})
+@Tags({"json", "jolt", "transform", "chainr", "shift", "default", "remove", "cardinality", "sort"})
 @InputRequirement(InputRequirement.Requirement.INPUT_REQUIRED)
 @WritesAttribute(attribute = "mime.type", description = "Always set to application/json")
 @CapabilityDescription("Applies a list of Jolt specifications to either the FlowFile JSON content or a specified FlowFile JSON attribute. "
@@ -81,7 +82,6 @@ public class JoltTransformJSON extends AbstractJoltTransform {
 
     public static final PropertyDescriptor PRETTY_PRINT = new PropertyDescriptor.Builder()
             .name("Pretty Print")
-            .displayName("Pretty Print")
             .description("Apply pretty print formatting to the output of the Jolt transform")
             .required(true)
             .allowableValues("true", "false")
@@ -90,7 +90,6 @@ public class JoltTransformJSON extends AbstractJoltTransform {
 
     public static final PropertyDescriptor MAX_STRING_LENGTH = new PropertyDescriptor.Builder()
             .name("Max String Length")
-            .displayName("Max String Length")
             .description("The maximum allowed length of a string value when parsing the JSON document")
             .required(true)
             .defaultValue("20 MB")
@@ -208,6 +207,7 @@ public class JoltTransformJSON extends AbstractJoltTransform {
     }
 
     @OnScheduled
+    @Override
     public void setup(final ProcessContext context) {
         super.setup(context);
         final int maxStringLength = context.getProperty(MAX_STRING_LENGTH).asDataSize(DataUnit.B).intValue();
@@ -218,7 +218,9 @@ public class JoltTransformJSON extends AbstractJoltTransform {
         jsonUtil = JsonUtils.customJsonUtil(objectMapper);
 
         try {
-            if (context.getProperty(MODULES).isSet()) {
+            final JoltTransformStrategy strategy = context.getProperty(JOLT_TRANSFORM).asAllowableValue(JoltTransformStrategy.class);
+
+            if (strategy == JoltTransformStrategy.CUSTOMR && context.getProperty(MODULES).isSet()) {
                 customClassLoader = ClassLoaderUtils.getCustomClassLoader(
                         context.getProperty(MODULES).evaluateAttributeExpressions().getValue(),
                         this.getClass().getClassLoader(),

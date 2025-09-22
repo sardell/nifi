@@ -17,6 +17,7 @@
 package org.apache.nifi.controller;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.nifi.attribute.expression.language.Query;
 import org.apache.nifi.attribute.expression.language.StandardPropertyValue;
 import org.apache.nifi.attribute.expression.language.VariableImpact;
@@ -238,13 +239,14 @@ public abstract class AbstractComponentNode implements ComponentNode {
      * @param properties Map of Property Name to Value
      */
     protected void overwriteProperties(final Map<String, String> properties) {
-        // Update properties.
         final Map<String, String> updatedProperties = new HashMap<>(properties);
-        final Set<String> sensitiveDynamicPropNames = new HashSet<>();
+
+        // Build set of Sensitive Dynamic Property Names based on updated Properties
+        final Set<String> updatedSensitiveDynamicPropertyNames = new HashSet<>();
         for (final String propertyName : updatedProperties.keySet()) {
             final PropertyDescriptor descriptor = getPropertyDescriptor(propertyName);
             if (descriptor != null && descriptor.isDynamic() && descriptor.isSensitive()) {
-                sensitiveDynamicPropNames.add(propertyName);
+                updatedSensitiveDynamicPropertyNames.add(propertyName);
             }
         }
 
@@ -253,7 +255,10 @@ public abstract class AbstractComponentNode implements ComponentNode {
             updatedProperties.putIfAbsent(descriptor.getName(), null);
         }
 
-        setProperties(updatedProperties, true, sensitiveDynamicPropNames);
+        // Clear existing Sensitive Dynamic Property Names to avoid cases where a sensitive property name has been changed or removed
+        sensitiveDynamicPropertyNames.getAndSet(Set.of());
+
+        setProperties(updatedProperties, true, updatedSensitiveDynamicPropertyNames);
     }
 
     /**
@@ -374,6 +379,7 @@ public abstract class AbstractComponentNode implements ComponentNode {
         return getClassLoaderIsolationKey(validationContext);
     }
 
+    @Override
     public void verifyCanUpdateProperties(final Map<String, String> properties) {
         verifyModifiable();
 
@@ -639,6 +645,7 @@ public abstract class AbstractComponentNode implements ComponentNode {
         return true;
     }
 
+    @Override
     public Map<PropertyDescriptor, PropertyConfiguration> getProperties() {
         try (final NarCloseable ignored = NarCloseable.withComponentNarLoader(extensionManager, getComponent().getClass(), getIdentifier())) {
             final List<PropertyDescriptor> supported = getComponent().getPropertyDescriptors();
@@ -771,7 +778,7 @@ public abstract class AbstractComponentNode implements ComponentNode {
         final Set<URL> additionalUrls = this.getAdditionalClasspathResources(descriptors);
 
         final String newFingerprint = ClassLoaderUtils.generateAdditionalUrlsFingerprint(additionalUrls, determineClasloaderIsolationKey());
-        return (!StringUtils.equals(additionalResourcesFingerprint, newFingerprint));
+        return (!Strings.CS.equals(additionalResourcesFingerprint, newFingerprint));
     }
 
     /**
@@ -791,7 +798,7 @@ public abstract class AbstractComponentNode implements ComponentNode {
             final Set<URL> additionalUrls = this.getAdditionalClasspathResources(descriptors, this::getEffectivePropertyValueWithDefault);
 
             final String newFingerprint = ClassLoaderUtils.generateAdditionalUrlsFingerprint(additionalUrls, isolationKey);
-            if (!StringUtils.equals(additionalResourcesFingerprint, newFingerprint)) {
+            if (!Strings.CS.equals(additionalResourcesFingerprint, newFingerprint)) {
                 setAdditionalResourcesFingerprint(newFingerprint);
                 try {
                     logger.info("Updating classpath for [{}] with the ID [{}]", this.componentType, this.getIdentifier());

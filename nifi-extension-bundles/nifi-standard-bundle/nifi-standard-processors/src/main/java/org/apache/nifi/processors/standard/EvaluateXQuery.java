@@ -290,12 +290,12 @@ public class EvaluateXQuery extends AbstractProcessor {
                             String value = formatItem(item, context);
                             String attributeName = entry.getKey();
                             if (result.size() > 1) {
-                                attributeName += "." + index++;
+                                attributeName += "." + index++; //NOPMD
                             }
                             xQueryResults.put(attributeName, value);
                         }
                     } else { // if (DESTINATION_CONTENT.equals(destination)){
-                        if (result.isEmpty()) {
+                        if (result.isEmptySequence()) {
                             logger.info("No XQuery results found {}", flowFile);
                             session.transfer(flowFile, REL_NO_MATCH);
                             continue flowFileLoop;

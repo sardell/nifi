@@ -20,7 +20,6 @@ import com.box.sdk.BoxAPIConnection;
 import com.box.sdk.BoxAPIResponseException;
 import com.box.sdk.BoxFile;
 import com.box.sdk.Metadata;
-import com.eclipsesource.json.JsonValue;
 import org.apache.nifi.annotation.behavior.InputRequirement;
 import org.apache.nifi.annotation.behavior.WritesAttribute;
 import org.apache.nifi.annotation.behavior.WritesAttributes;
@@ -33,7 +32,6 @@ import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.expression.ExpressionLanguageScope;
 import org.apache.nifi.flowfile.FlowFile;
 import org.apache.nifi.flowfile.attributes.CoreAttributes;
-import org.apache.nifi.processor.AbstractProcessor;
 import org.apache.nifi.processor.ProcessContext;
 import org.apache.nifi.processor.ProcessSession;
 import org.apache.nifi.processor.Relationship;
@@ -42,7 +40,6 @@ import org.apache.nifi.processor.util.StandardValidators;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -56,6 +53,7 @@ import static org.apache.nifi.processors.box.BoxFileAttributes.ERROR_CODE;
 import static org.apache.nifi.processors.box.BoxFileAttributes.ERROR_CODE_DESC;
 import static org.apache.nifi.processors.box.BoxFileAttributes.ERROR_MESSAGE;
 import static org.apache.nifi.processors.box.BoxFileAttributes.ERROR_MESSAGE_DESC;
+import static org.apache.nifi.processors.box.utils.BoxMetadataUtils.processBoxMetadataInstance;
 
 @InputRequirement(InputRequirement.Requirement.INPUT_REQUIRED)
 @Tags({"box", "storage", "metadata", "instances", "templates"})
@@ -70,7 +68,7 @@ import static org.apache.nifi.processors.box.BoxFileAttributes.ERROR_MESSAGE_DES
         @WritesAttribute(attribute = ERROR_CODE, description = ERROR_CODE_DESC),
         @WritesAttribute(attribute = ERROR_MESSAGE, description = ERROR_MESSAGE_DESC)
 })
-public class ListBoxFileMetadataInstances extends AbstractProcessor {
+public class ListBoxFileMetadataInstances extends AbstractBoxProcessor {
 
     public static final PropertyDescriptor FILE_ID = new PropertyDescriptor.Builder()
             .name("File ID")
@@ -103,7 +101,7 @@ public class ListBoxFileMetadataInstances extends AbstractProcessor {
     );
 
     private static final List<PropertyDescriptor> PROPERTY_DESCRIPTORS = List.of(
-            BoxClientService.BOX_CLIENT_SERVICE,
+            BOX_CLIENT_SERVICE,
             FILE_ID
     );
 
@@ -121,7 +119,7 @@ public class ListBoxFileMetadataInstances extends AbstractProcessor {
 
     @OnScheduled
     public void onScheduled(final ProcessContext context) {
-        final BoxClientService boxClientService = context.getProperty(BoxClientService.BOX_CLIENT_SERVICE)
+        final BoxClientService boxClientService = context.getProperty(BOX_CLIENT_SERVICE)
                 .asControllerService(BoxClientService.class);
         boxAPIConnection = boxClientService.getBoxApiConnection();
     }
@@ -157,20 +155,7 @@ public class ListBoxFileMetadataInstances extends AbstractProcessor {
                 templateNames.add(metadata.getTemplateName());
 
                 // Add standard metadata fields
-                instanceFields.put("$id", metadata.getID());
-                instanceFields.put("$type", metadata.getTypeName());
-                instanceFields.put("$parent", "file_" + fileId); // match the Box API format
-                instanceFields.put("$template", metadata.getTemplateName());
-                instanceFields.put("$scope", metadata.getScope());
-
-                for (final String fieldName : metadata.getPropertyPaths()) {
-                    final JsonValue jsonValue = metadata.getValue(fieldName);
-                    if (jsonValue != null) {
-                        final String cleanFieldName = fieldName.startsWith("/") ? fieldName.substring(1) : fieldName;
-                        final Object fieldValue = parseJsonValue(jsonValue);
-                        instanceFields.put(cleanFieldName, fieldValue);
-                    }
-                }
+                processBoxMetadataInstance(fileId, metadata, instanceFields);
                 instanceList.add(instanceFields);
             }
 
@@ -225,43 +210,5 @@ public class ListBoxFileMetadataInstances extends AbstractProcessor {
      */
     BoxFile getBoxFile(final String fileId) {
         return new BoxFile(boxAPIConnection, fileId);
-    }
-
-    /**
-     * Parses a JsonValue and returns the appropriate Java object.
-     * Box does not allow exponential notation in metadata values, so we need to handle
-     * special number formats. For numbers containing decimal points or exponents, we try to
-     * convert them to BigDecimal first for precise representation. If that fails, we
-     * fall back to double, which might lose precision but allows the processing to continue.
-     *
-     * @param jsonValue The JsonValue to parse.
-     * @return The parsed Java object.
-     */
-    protected static Object parseJsonValue(final JsonValue jsonValue) {
-        if (jsonValue == null) {
-            return null;
-        }
-        if (jsonValue.isString()) {
-            return jsonValue.asString();
-        } else if (jsonValue.isNumber()) {
-            final String numberString = jsonValue.toString();
-            if (numberString.contains(".") || numberString.toLowerCase().contains("e")) {
-                try {
-                    return (new BigDecimal(numberString)).toPlainString();
-                } catch (final NumberFormatException e) {
-                    return jsonValue.asDouble();
-                }
-            } else {
-                try {
-                    return jsonValue.asLong();
-                } catch (final NumberFormatException e) {
-                    return (new BigDecimal(numberString)).toPlainString();
-                }
-            }
-        } else if (jsonValue.isBoolean()) {
-            return jsonValue.asBoolean();
-        }
-        // Fallback: return the string representation.
-        return jsonValue.toString();
     }
 }

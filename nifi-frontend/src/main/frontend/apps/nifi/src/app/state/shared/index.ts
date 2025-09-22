@@ -119,10 +119,6 @@ export interface EditTenantResponse {
     userGroup?: any;
 }
 
-export interface CreateControllerServiceDialogRequest {
-    controllerServiceTypes: DocumentedType[];
-}
-
 export interface EditControllerServiceDialogRequest {
     id: string;
     controllerService: ControllerServiceEntity;
@@ -247,6 +243,11 @@ export interface ValidationErrorsTipInput {
 
 export interface BulletinsTipInput {
     bulletins: BulletinEntity[];
+}
+
+export interface PropertyValueTipInput {
+    parameters: ParameterEntity[];
+    property: Property;
 }
 
 export interface PropertyTipInput {

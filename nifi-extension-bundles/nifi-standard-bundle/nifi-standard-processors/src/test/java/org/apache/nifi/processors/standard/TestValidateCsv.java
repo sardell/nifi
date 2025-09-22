@@ -26,9 +26,67 @@ import java.util.Map;
 
 public class TestValidateCsv {
 
+    private final TestRunner runner = TestRunners.newTestRunner(new ValidateCsv());
+
+    @Test
+    public void testNonTerminatedQuoteCharacterForLineByLineValidation() {
+        // This test covers the scenario where a quote character is opened but not closed before the end of the file.
+        // In such a case, there is a risk of loading the entire file into memory, which can lead to OOM errors.
+        // This test is focused on line-by-line validation, where each line is treated independently.
+        runner.setProperty(ValidateCsv.DELIMITER_CHARACTER, ",");
+        runner.setProperty(ValidateCsv.END_OF_LINE_CHARACTER, "\n");
+        runner.setProperty(ValidateCsv.QUOTE_CHARACTER, "\"");
+        runner.setProperty(ValidateCsv.MAX_LINES_PER_ROW, "1");
+        runner.setProperty(ValidateCsv.HEADER, "false");
+        runner.setProperty(ValidateCsv.SCHEMA, "ParseInt(), StrNotNullOrEmpty()");
+        runner.setProperty(ValidateCsv.VALIDATION_STRATEGY, ValidateCsv.VALIDATE_LINES_INDIVIDUALLY);
+
+        runner.enqueue("\"1,foo\n2,bar\n3,baz\n");
+        runner.run();
+
+        runner.assertTransferCount(ValidateCsv.REL_VALID, 1);
+        runner.assertTransferCount(ValidateCsv.REL_INVALID, 1);
+
+        MockFlowFile validFF = runner.getFlowFilesForRelationship(ValidateCsv.REL_VALID).getFirst();
+        validFF.assertAttributeEquals("count.valid.lines", "2");
+        validFF.assertAttributeEquals("count.total.lines", "3");
+        validFF.assertContentEquals("2,bar\n3,baz");
+
+        MockFlowFile invalidFF = runner.getFlowFilesForRelationship(ValidateCsv.REL_INVALID).getFirst();
+        invalidFF.assertAttributeEquals("count.invalid.lines", "1");
+        invalidFF.assertAttributeEquals("count.total.lines", "3");
+        invalidFF.assertAttributeEquals("validation.error.message", "unexpected end of line while reading quoted column on line 1");
+        invalidFF.assertContentEquals("\"1,foo\n");
+    }
+
+    @Test
+    public void testNonTerminatedQuoteCharacterForWholeFileValidation() {
+        // This test covers the scenario where a quote character is opened but not closed before the end of the file.
+        // In such a case, there is a risk of loading the entire file into memory, which can lead to OOM errors.
+        // This test is focused on whole file validation.
+        runner.setProperty(ValidateCsv.DELIMITER_CHARACTER, ",");
+        runner.setProperty(ValidateCsv.END_OF_LINE_CHARACTER, "\n");
+        runner.setProperty(ValidateCsv.QUOTE_CHARACTER, "\"");
+        runner.setProperty(ValidateCsv.MAX_LINES_PER_ROW, "1");
+        runner.setProperty(ValidateCsv.HEADER, "false");
+        runner.setProperty(ValidateCsv.SCHEMA, "ParseInt(), StrNotNullOrEmpty()");
+        runner.setProperty(ValidateCsv.VALIDATION_STRATEGY, ValidateCsv.VALIDATE_WHOLE_FLOWFILE);
+
+        runner.enqueue("\"1,foo\n2,bar\n3,baz\n");
+        runner.run();
+
+        runner.assertTransferCount(ValidateCsv.REL_VALID, 0);
+        runner.assertTransferCount(ValidateCsv.REL_INVALID, 1);
+
+        MockFlowFile invalidFF = runner.getFlowFilesForRelationship(ValidateCsv.REL_INVALID).getFirst();
+        invalidFF.assertAttributeNotExists("count.invalid.lines");
+        invalidFF.assertAttributeNotExists("count.total.lines");
+        invalidFF.assertAttributeEquals("validation.error.message", "unexpected end of line while reading quoted column on line 1");
+        invalidFF.assertContentEquals("\"1,foo\n2,bar\n3,baz\n");
+    }
+
     @Test
     public void testHeaderAndSplit() {
-        final TestRunner runner = TestRunners.newTestRunner(new ValidateCsv());
         runner.setProperty(ValidateCsv.DELIMITER_CHARACTER, ",");
         runner.setProperty(ValidateCsv.END_OF_LINE_CHARACTER, "\n");
         runner.setProperty(ValidateCsv.QUOTE_CHARACTER, "\"");
@@ -66,7 +124,6 @@ public class TestValidateCsv {
 
     @Test
     public void testNullValues() {
-        final TestRunner runner = TestRunners.newTestRunner(new ValidateCsv());
         runner.setProperty(ValidateCsv.DELIMITER_CHARACTER, ",");
         runner.setProperty(ValidateCsv.END_OF_LINE_CHARACTER, "\n");
         runner.setProperty(ValidateCsv.QUOTE_CHARACTER, "\"");
@@ -85,7 +142,6 @@ public class TestValidateCsv {
 
     @Test
     public void testUniqueWithSplit() {
-        final TestRunner runner = TestRunners.newTestRunner(new ValidateCsv());
         runner.setProperty(ValidateCsv.DELIMITER_CHARACTER, ",");
         runner.setProperty(ValidateCsv.END_OF_LINE_CHARACTER, "\r\n");
         runner.setProperty(ValidateCsv.QUOTE_CHARACTER, "\"");
@@ -110,7 +166,6 @@ public class TestValidateCsv {
 
     @Test
     public void testValidDateOptionalDouble() {
-        final TestRunner runner = TestRunners.newTestRunner(new ValidateCsv());
         runner.setProperty(ValidateCsv.DELIMITER_CHARACTER, ",");
         runner.setProperty(ValidateCsv.END_OF_LINE_CHARACTER, "\r\n");
         runner.setProperty(ValidateCsv.QUOTE_CHARACTER, "\"");
@@ -132,7 +187,6 @@ public class TestValidateCsv {
 
     @Test
     public void testIsIncludedIn() {
-        final TestRunner runner = TestRunners.newTestRunner(new ValidateCsv());
         runner.setProperty(ValidateCsv.DELIMITER_CHARACTER, ",");
         runner.setProperty(ValidateCsv.END_OF_LINE_CHARACTER, "\r\n");
         runner.setProperty(ValidateCsv.QUOTE_CHARACTER, "\"");
@@ -151,7 +205,6 @@ public class TestValidateCsv {
 
     @Test
     public void testBigDecimalBoolCharIntLong() {
-        final TestRunner runner = TestRunners.newTestRunner(new ValidateCsv());
         runner.setProperty(ValidateCsv.DELIMITER_CHARACTER, ",");
         runner.setProperty(ValidateCsv.END_OF_LINE_CHARACTER, "\r\n");
         runner.setProperty(ValidateCsv.QUOTE_CHARACTER, "\"");
@@ -170,7 +223,6 @@ public class TestValidateCsv {
 
     @Test
     public void testNoSchema() {
-        final TestRunner runner = TestRunners.newTestRunner(new ValidateCsv());
         runner.setProperty(ValidateCsv.DELIMITER_CHARACTER, ",");
         runner.setProperty(ValidateCsv.END_OF_LINE_CHARACTER, "\r\n");
         runner.setProperty(ValidateCsv.QUOTE_CHARACTER, "\"");
@@ -188,7 +240,6 @@ public class TestValidateCsv {
 
     @Test
     public void testValidateOnAttribute() {
-        final TestRunner runner = TestRunners.newTestRunner(new ValidateCsv());
         runner.setProperty(ValidateCsv.DELIMITER_CHARACTER, ",");
         runner.setProperty(ValidateCsv.END_OF_LINE_CHARACTER, "\r\n");
         runner.setProperty(ValidateCsv.QUOTE_CHARACTER, "\"");
@@ -206,7 +257,6 @@ public class TestValidateCsv {
 
     @Test
     public void testValidateOnAttributeDoesNotExist() {
-        final TestRunner runner = TestRunners.newTestRunner(new ValidateCsv());
         runner.setProperty(ValidateCsv.DELIMITER_CHARACTER, ",");
         runner.setProperty(ValidateCsv.END_OF_LINE_CHARACTER, "\r\n");
         runner.setProperty(ValidateCsv.QUOTE_CHARACTER, "\"");
@@ -233,7 +283,6 @@ public class TestValidateCsv {
 
     @Test
     public void testValidateOnAttributeDoesNotExistNoSchema() {
-        final TestRunner runner = TestRunners.newTestRunner(new ValidateCsv());
         runner.setProperty(ValidateCsv.DELIMITER_CHARACTER, ",");
         runner.setProperty(ValidateCsv.END_OF_LINE_CHARACTER, "\r\n");
         runner.setProperty(ValidateCsv.QUOTE_CHARACTER, "\"");
@@ -254,7 +303,6 @@ public class TestValidateCsv {
 
     @Test
     public void testValidateEmptyFile() {
-        final TestRunner runner = TestRunners.newTestRunner(new ValidateCsv());
         runner.setProperty(ValidateCsv.DELIMITER_CHARACTER, ",");
         runner.setProperty(ValidateCsv.END_OF_LINE_CHARACTER, "\r\n");
         runner.setProperty(ValidateCsv.QUOTE_CHARACTER, "\"");
@@ -270,7 +318,6 @@ public class TestValidateCsv {
 
     @Test
     public void testEqualsNotNullStrNotNullOrEmpty() {
-        final TestRunner runner = TestRunners.newTestRunner(new ValidateCsv());
         runner.setProperty(ValidateCsv.DELIMITER_CHARACTER, ",");
         runner.setProperty(ValidateCsv.END_OF_LINE_CHARACTER, "\r\n");
         runner.setProperty(ValidateCsv.QUOTE_CHARACTER, "\"");
@@ -289,7 +336,6 @@ public class TestValidateCsv {
 
     @Test
     public void testStrlenStrMinMaxStrRegex() {
-        final TestRunner runner = TestRunners.newTestRunner(new ValidateCsv());
         runner.setProperty(ValidateCsv.DELIMITER_CHARACTER, ",");
         runner.setProperty(ValidateCsv.END_OF_LINE_CHARACTER, "\r\n");
         runner.setProperty(ValidateCsv.QUOTE_CHARACTER, "\"");
@@ -310,7 +356,6 @@ public class TestValidateCsv {
 
     @Test
     public void testDMinMaxForbidSubStrLMinMax() {
-        final TestRunner runner = TestRunners.newTestRunner(new ValidateCsv());
         runner.setProperty(ValidateCsv.DELIMITER_CHARACTER, ",");
         runner.setProperty(ValidateCsv.END_OF_LINE_CHARACTER, "\r\n");
         runner.setProperty(ValidateCsv.QUOTE_CHARACTER, "\"");
@@ -329,7 +374,6 @@ public class TestValidateCsv {
 
     @Test
     public void testUnique() {
-        final TestRunner runner = TestRunners.newTestRunner(new ValidateCsv());
         runner.setProperty(ValidateCsv.DELIMITER_CHARACTER, ",");
         runner.setProperty(ValidateCsv.END_OF_LINE_CHARACTER, "\r\n");
         runner.setProperty(ValidateCsv.QUOTE_CHARACTER, "\"");
@@ -348,7 +392,6 @@ public class TestValidateCsv {
 
     @Test
     public void testRequire() {
-        final TestRunner runner = TestRunners.newTestRunner(new ValidateCsv());
         runner.setProperty(ValidateCsv.DELIMITER_CHARACTER, ",");
         runner.setProperty(ValidateCsv.END_OF_LINE_CHARACTER, "\r\n");
         runner.setProperty(ValidateCsv.QUOTE_CHARACTER, "\"");
@@ -368,7 +411,6 @@ public class TestValidateCsv {
 
     @Test
     public void testValidate() {
-        final TestRunner runner = TestRunners.newTestRunner(new ValidateCsv());
         runner.setProperty(ValidateCsv.DELIMITER_CHARACTER, ",");
         runner.setProperty(ValidateCsv.END_OF_LINE_CHARACTER, "\r\n");
         runner.setProperty(ValidateCsv.QUOTE_CHARACTER, "\"");
@@ -388,7 +430,6 @@ public class TestValidateCsv {
 
     @Test
     public void testValidateWithEL() {
-        final TestRunner runner = TestRunners.newTestRunner(new ValidateCsv());
         runner.setProperty(ValidateCsv.DELIMITER_CHARACTER, "${comma}");
         runner.setProperty(ValidateCsv.END_OF_LINE_CHARACTER, "${crlf}");
         runner.setProperty(ValidateCsv.QUOTE_CHARACTER, "${quote}");
@@ -419,14 +460,12 @@ public class TestValidateCsv {
 
     @Test
     public void testParseSchemaCommaBoundary() {
-        final TestRunner runner = TestRunners.newTestRunner(new ValidateCsv());
         runner.setProperty(ValidateCsv.SCHEMA, "Null(),Null");
         runner.assertValid();
     }
 
     @Test
     public void testMultipleRuns() {
-        final TestRunner runner = TestRunners.newTestRunner(new ValidateCsv());
         runner.setProperty(ValidateCsv.DELIMITER_CHARACTER, ",");
         runner.setProperty(ValidateCsv.END_OF_LINE_CHARACTER, "\r\n");
         runner.setProperty(ValidateCsv.QUOTE_CHARACTER, "\"");
@@ -445,7 +484,6 @@ public class TestValidateCsv {
 
     @Test
     public void testEscapingLineByLine() {
-        final TestRunner runner = TestRunners.newTestRunner(new ValidateCsv());
         runner.setProperty(ValidateCsv.DELIMITER_CHARACTER, ",");
         runner.setProperty(ValidateCsv.END_OF_LINE_CHARACTER, "\r\n");
         runner.setProperty(ValidateCsv.QUOTE_CHARACTER, "\"");
@@ -474,7 +512,6 @@ public class TestValidateCsv {
 
     @Test
     public void testQuote() {
-        final TestRunner runner = TestRunners.newTestRunner(new ValidateCsv());
         runner.setProperty(ValidateCsv.DELIMITER_CHARACTER, ",");
         runner.setProperty(ValidateCsv.END_OF_LINE_CHARACTER, "\n");
         runner.setProperty(ValidateCsv.QUOTE_CHARACTER, "\"");

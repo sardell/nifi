@@ -447,6 +447,13 @@ public interface NiFiServiceFacade {
     CounterDTO updateCounter(String counterId);
 
     /**
+     * Updates all counters by setting their values to 0.
+     *
+     * @return The counters
+     */
+    CountersDTO updateAllCounters();
+
+    /**
      * Returns the counters.
      *
      * @return The counters
@@ -1279,6 +1286,16 @@ public interface NiFiServiceFacade {
     ProcessGroupEntity updateProcessGroup(Revision revision, ProcessGroupDTO processGroupDTO);
 
     /**
+     * Sets the version control info of an unversioned process group.
+     *
+     * @param revision Revision to compare with the current base version
+     * @param processGroupDTO The ProcessGroupDTO
+     * @param flowSnapshot The flow snapshot matching the given version control info
+     * @return the updated process group entity
+     */
+    ProcessGroupEntity setVersionControlInformation(Revision revision, ProcessGroupDTO processGroupDTO, RegisteredFlowSnapshot flowSnapshot);
+
+    /**
      * Verifies that the Process Group identified by the given DTO can be updated in the manner appropriate according
      * to the DTO
      *
@@ -1855,9 +1872,11 @@ public interface NiFiServiceFacade {
     /**
      * Clears the state for the specified processor.
      *
-     * @param processorId the processor id
+     * @param processorId       processor id
+     * @param componentStateDTO state of the processor
+     * @return the cleared component state
      */
-    void clearProcessorState(String processorId);
+    ComponentStateDTO clearProcessorState(final String processorId, final ComponentStateDTO componentStateDTO);
 
     /**
      * Gets the state for the specified controller service.
@@ -1878,8 +1897,10 @@ public interface NiFiServiceFacade {
      * Clears the state for the specified controller service.
      *
      * @param controllerServiceId the controller service id
+     * @param componentStateDTO   state of the controller service
+     * @return the cleared component state
      */
-    void clearControllerServiceState(String controllerServiceId);
+    ComponentStateDTO clearControllerServiceState(String controllerServiceId, final ComponentStateDTO componentStateDTO);
 
     /**
      * Gets the state for the specified reporting task.
@@ -1899,9 +1920,11 @@ public interface NiFiServiceFacade {
     /**
      * Clears the state for the specified reporting task.
      *
-     * @param reportingTaskId the reporting task id
+     * @param reportingTaskId   the reporting task id
+     * @param componentStateDTO the component state of the reporting task
+     * @return the cleared component state
      */
-    void clearReportingTaskState(String reportingTaskId);
+    ComponentStateDTO clearReportingTaskState(String reportingTaskId, final ComponentStateDTO componentStateDTO);
 
     /**
      * Gets the state for the specified parameter provider.
@@ -1922,8 +1945,10 @@ public interface NiFiServiceFacade {
      * Clears the state for the specified parameter provider.
      *
      * @param parameterProviderId the parameter provider id
+     * @param componentStateDTO   the component state of the parameter provider
+     * @return the cleared component state
      */
-    void clearParameterProviderState(String parameterProviderId);
+    ComponentStateDTO clearParameterProviderState(String parameterProviderId, final ComponentStateDTO componentStateDTO);
 
     /**
      * Gets the state for the specified RemoteProcessGroup.
@@ -2766,6 +2791,14 @@ public interface NiFiServiceFacade {
     void discoverCompatibleBundles(VersionedProcessGroup versionedGroup);
 
     /**
+     * Discovers the compatible bundle details for the components in the specified Parameter Providers and updates them
+     * to reflect the appropriate bundles.
+     *
+     * @param parameterProviders the parameter provider map
+     */
+    void discoverCompatibleBundles(Map<String, ParameterProviderReference> parameterProviders);
+
+    /**
      * Discovers the compatible bundle details for the components in the specified snapshot and updates the snapshot to reflect the appropriate bundles.
      *
      * @param reportingTaskSnapshot the snapshot
@@ -2912,8 +2945,10 @@ public interface NiFiServiceFacade {
      * Clears the state for the flow analysis rule with the specified id.
      *
      * @param flowAnalysisRuleId the flow analysis rule id
+     * @param componentStateDTO  the state of the flow analysis rule
+     * @return the cleared component state
      */
-    void clearFlowAnalysisRuleState(String flowAnalysisRuleId);
+    ComponentStateDTO clearFlowAnalysisRuleState(String flowAnalysisRuleId, final ComponentStateDTO componentStateDTO);
 
     /**
      * Updates the specified flow analysis rule.

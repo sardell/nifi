@@ -52,6 +52,7 @@ import static org.mockito.Mockito.when;
 
 class TestConnectWebSocket extends TestListenWebSocket {
 
+    @Override
     @Test
     public void testSuccess() throws Exception {
         final TestRunner runner = TestRunners.newTestRunner(ConnectWebSocket.class);
@@ -130,7 +131,7 @@ class TestConnectWebSocket extends TestListenWebSocket {
         final String serverId = "ws-server-service";
         JettyWebSocketServer server = new JettyWebSocketServer();
         webSocketListener.addControllerService(serverId, server);
-        webSocketListener.setProperty(server, JettyWebSocketServer.LISTEN_PORT, "0");
+        webSocketListener.setProperty(server, JettyWebSocketServer.PORT, "0");
         webSocketListener.enableControllerService(server);
 
         webSocketListener.setProperty(ListenWebSocket.PROP_WEBSOCKET_SERVER_SERVICE, serverId);
@@ -208,7 +209,7 @@ class TestConnectWebSocket extends TestListenWebSocket {
         final String serverId = "ws-server-service";
         JettyWebSocketServer server = new JettyWebSocketServer();
         webSocketListener.addControllerService(serverId, server);
-        webSocketListener.setProperty(server, JettyWebSocketServer.LISTEN_PORT, "0");
+        webSocketListener.setProperty(server, JettyWebSocketServer.PORT, "0");
         webSocketListener.enableControllerService(server);
 
         webSocketListener.setProperty(ListenWebSocket.PROP_WEBSOCKET_SERVER_SERVICE, serverId);

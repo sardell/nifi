@@ -2166,18 +2166,6 @@ The following binary components are provided under the Apache Software License v
       Apache Yetus
       Copyright 2008-2018 The Apache Software Foundation
 
-  (ASLv2) sshj
-    The following NOTICE information applies:
-
-      sshj - SSHv2 library for Java
-      Copyright 2010-2012 sshj contributors
-
-      This product includes code derived from software developed at
-      The Apache Software Foundation (http://www.apache.org/):
-
-      - Apache MINA SSHD
-      - Apache Commons-Net
-
   (ASLv2) Nimbus Language Tags
       The following NOTICE information applies:
         Nimbus Language Tags
@@ -2436,7 +2424,6 @@ The following binary components are provided under the Eclipse Public License 1.
 
     (EPL 1.0) AspectJ Weaver (org.aspectj:aspectjweaver:jar:1.9.6 - http://www.eclipse.org/aspectj/)
     (EPL 1.0) AspectJ Runtime (org.aspectj:aspectjrt:jar:1.9.6 - http://www.eclipse.org/aspectj/)
-    (EPL 1.0)(MPL 2.0) H2 Database (com.h2database:h2:jar:1.3.176 - http://www.h2database.com/html/license.html)
     (EPL 1.0)(LGPL 2.1) Logback Classic (ch.qos.logback:logback-classic:jar:1.2.6 - http://logback.qos.ch/)
     (EPL 1.0)(LGPL 2.1) Logback Core (ch.qos.logback:logback-core:jar:1.2.6 - http://logback.qos.ch/)
     (EPL 1.0) Eclipse Paho MQTT Client (org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.0 - https://github.com/eclipse/paho.mqtt.java)

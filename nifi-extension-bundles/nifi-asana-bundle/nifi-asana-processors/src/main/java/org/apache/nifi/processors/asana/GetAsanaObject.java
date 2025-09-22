@@ -33,6 +33,7 @@ import org.apache.nifi.controller.asana.AsanaClientProviderService;
 import org.apache.nifi.distributed.cache.client.DistributedMapCacheClient;
 import org.apache.nifi.flowfile.FlowFile;
 import org.apache.nifi.flowfile.attributes.CoreAttributes;
+import org.apache.nifi.migration.PropertyConfiguration;
 import org.apache.nifi.processor.AbstractProcessor;
 import org.apache.nifi.processor.ProcessContext;
 import org.apache.nifi.processor.ProcessSession;
@@ -92,47 +93,35 @@ import static org.apache.nifi.processors.asana.AsanaObjectType.AV_COLLECT_TEAM_M
 public class GetAsanaObject extends AbstractProcessor {
 
     protected static final String ASANA_GID = "asana.gid";
-    protected static final String ASANA_CLIENT_SERVICE = "asana-controller-service";
-    protected static final String DISTRIBUTED_CACHE_SERVICE = "distributed-cache-service";
-    protected static final String ASANA_OBJECT_TYPE = "asana-object-type";
-    protected static final String ASANA_PROJECT_NAME = "asana-project-name";
-    protected static final String ASANA_SECTION_NAME = "asana-section-name";
-    protected static final String ASANA_TAG_NAME = "asana-tag-name";
-    protected static final String ASANA_TEAM_NAME = "asana-team-name";
-    protected static final String ASANA_OUTPUT_BATCH_SIZE = "asana-output-batch-size";
     protected static final String REL_NAME_NEW = "new";
     protected static final String REL_NAME_UPDATED = "updated";
     protected static final String REL_NAME_REMOVED = "removed";
 
-    protected static final PropertyDescriptor PROP_ASANA_CLIENT_SERVICE = new PropertyDescriptor.Builder()
-            .name(ASANA_CLIENT_SERVICE)
-            .displayName("Asana Client Service")
+    protected static final PropertyDescriptor PROP_ASANA_CLIENT_SERVICE = new Builder()
+            .name("Asana Client Service")
             .description("Specify which controller service to use for accessing Asana.")
             .required(true)
             .identifiesControllerService(AsanaClientProviderService.class)
             .build();
 
     protected static final PropertyDescriptor PROP_DISTRIBUTED_CACHE_SERVICE = new Builder()
-            .name(DISTRIBUTED_CACHE_SERVICE)
-            .displayName("Distributed Cache Service")
+            .name("Distributed Cache Service")
             .description("Cache service to store fetched item fingerprints. These, from the last successful query"
                     + " are stored, in order to enable incremental loading and change detection.")
             .required(true)
             .identifiesControllerService(DistributedMapCacheClient.class)
             .build();
 
-    protected static final PropertyDescriptor PROP_ASANA_OBJECT_TYPE = new PropertyDescriptor.Builder()
-            .name(ASANA_OBJECT_TYPE)
-            .displayName("Object Type")
+    protected static final PropertyDescriptor PROP_ASANA_OBJECT_TYPE = new Builder()
+            .name("Object Type")
             .description("Specify what kind of objects to be collected from Asana")
             .required(true)
             .allowableValues(AsanaObjectType.class)
             .defaultValue(AV_COLLECT_TASKS)
             .build();
 
-    protected static final PropertyDescriptor PROP_ASANA_PROJECT = new PropertyDescriptor.Builder()
-            .name(ASANA_PROJECT_NAME)
-            .displayName("Project Name")
+    protected static final PropertyDescriptor PROP_ASANA_PROJECT = new Builder()
+            .name("Project Name")
             .description("Fetch only objects in this project. Case sensitive.")
             .required(true)
             .addValidator(StandardValidators.NON_BLANK_VALIDATOR)
@@ -147,9 +136,8 @@ public class GetAsanaObject extends AbstractProcessor {
                     AV_COLLECT_PROJECT_EVENTS)
             .build();
 
-    protected static final PropertyDescriptor PROP_ASANA_SECTION = new PropertyDescriptor.Builder()
-            .name(ASANA_SECTION_NAME)
-            .displayName("Section Name")
+    protected static final PropertyDescriptor PROP_ASANA_SECTION = new Builder()
+            .name("Section Name")
             .description("Fetch only objects in this section. Case sensitive.")
             .addValidator(StandardValidators.NON_BLANK_VALIDATOR)
             .dependsOn(PROP_ASANA_OBJECT_TYPE,
@@ -158,9 +146,8 @@ public class GetAsanaObject extends AbstractProcessor {
                     AV_COLLECT_STORIES)
             .build();
 
-    protected static final PropertyDescriptor PROP_ASANA_TAG = new PropertyDescriptor.Builder()
-            .name(ASANA_TAG_NAME)
-            .displayName("Tag")
+    protected static final PropertyDescriptor PROP_ASANA_TAG = new Builder()
+            .name("Tag")
             .description("Fetch only objects having this tag. Case sensitive.")
             .addValidator(StandardValidators.NON_BLANK_VALIDATOR)
             .dependsOn(PROP_ASANA_OBJECT_TYPE,
@@ -169,17 +156,15 @@ public class GetAsanaObject extends AbstractProcessor {
                     AV_COLLECT_STORIES)
             .build();
 
-    protected static final PropertyDescriptor PROP_ASANA_TEAM_NAME = new PropertyDescriptor.Builder()
-            .name(ASANA_TEAM_NAME)
-            .displayName("Team")
+    protected static final PropertyDescriptor PROP_ASANA_TEAM_NAME = new Builder()
+            .name("Team")
             .description("Team name. Case sensitive.")
             .addValidator(StandardValidators.NON_BLANK_VALIDATOR)
             .dependsOn(PROP_ASANA_OBJECT_TYPE, AV_COLLECT_TEAM_MEMBERS)
             .build();
 
-    protected static final PropertyDescriptor PROP_ASANA_OUTPUT_BATCH_SIZE = new PropertyDescriptor.Builder()
-            .name(ASANA_OUTPUT_BATCH_SIZE)
-            .displayName("Output Batch Size")
+    protected static final PropertyDescriptor PROP_ASANA_OUTPUT_BATCH_SIZE = new Builder()
+            .name("Output Batch Size")
             .description("The number of items batched together in a single Flow File. If set to 1 (default), then each item is"
                     + " transferred in a separate Flow File and each will have an asana.gid attribute, to help identifying"
                     + " the fetched item on the server side, if needed. If the batch size is greater than 1, then the"
@@ -318,6 +303,18 @@ public class GetAsanaObject extends AbstractProcessor {
         getLogger().debug("New state after transferring {} FlowFiles: {}", transferCount, state);
     }
 
+    @Override
+    public void migrateProperties(PropertyConfiguration config) {
+        config.renameProperty("asana-controller-service", PROP_ASANA_CLIENT_SERVICE.getName());
+        config.renameProperty("distributed-cache-service", PROP_DISTRIBUTED_CACHE_SERVICE.getName());
+        config.renameProperty("asana-object-type", PROP_ASANA_OBJECT_TYPE.getName());
+        config.renameProperty("asana-project-name", PROP_ASANA_PROJECT.getName());
+        config.renameProperty("asana-section-name", PROP_ASANA_SECTION.getName());
+        config.renameProperty("asana-tag-name", PROP_ASANA_TAG.getName());
+        config.renameProperty("asana-team-name", PROP_ASANA_TEAM_NAME.getName());
+        config.renameProperty("asana-output-batch-size", PROP_ASANA_OUTPUT_BATCH_SIZE.getName());
+    }
+
     private void transferBatchedItemsFromBuffer(ProcessSession session, AsanaObjectState state, Collection<String> buffer) {
         FlowFile flowFile = createFlowFileWithStringPayload(session, format("[%s]", join(",", buffer)));
         flowFile = session.putAllAttributes(flowFile,
@@ -342,10 +339,10 @@ public class GetAsanaObject extends AbstractProcessor {
 
     protected AsanaObjectFetcher createObjectFetcher(final ProcessContext context, AsanaClient client) {
         final AsanaObjectType objectType = context.getProperty(PROP_ASANA_OBJECT_TYPE).asAllowableValue(AsanaObjectType.class);
-        final String projectName = context.getProperty(PROP_ASANA_PROJECT).getValue();
-        final String sectionName = context.getProperty(PROP_ASANA_SECTION).getValue();
-        final String teamName = context.getProperty(PROP_ASANA_TEAM_NAME).getValue();
-        final String tagName = context.getProperty(PROP_ASANA_TAG).getValue();
+        final String projectName = getProjectName(context, objectType);
+        final String sectionName = getSectionName(context, objectType);
+        final String tagName = getTagName(context, objectType);
+        final String teamName = getTeamName(context, objectType);
 
         return switch (objectType) {
             case AV_COLLECT_TASKS -> new AsanaTaskFetcher(client, projectName, sectionName, tagName);
@@ -388,7 +385,51 @@ public class GetAsanaObject extends AbstractProcessor {
         }
     }
 
+    protected String getProjectName(ProcessContext context, AsanaObjectType objectType) {
+        return switch (objectType) {
+            case AV_COLLECT_TASKS,
+                 AV_COLLECT_TASK_ATTACHMENTS,
+                 AV_COLLECT_PROJECT_MEMBERS,
+                 AV_COLLECT_STORIES,
+                 AV_COLLECT_PROJECT_STATUS_UPDATES,
+                 AV_COLLECT_PROJECT_STATUS_ATTACHMENTS,
+                 AV_COLLECT_PROJECT_EVENTS -> context.getProperty(PROP_ASANA_PROJECT).getValue();
+            case AV_COLLECT_PROJECTS, AV_COLLECT_TEAM_MEMBERS, AV_COLLECT_TAGS, AV_COLLECT_USERS, AV_COLLECT_TEAMS -> null;
+        };
+    }
+
+    protected String getSectionName(ProcessContext context, AsanaObjectType objectType) {
+        return switch (objectType) {
+            case AV_COLLECT_TASKS,
+                 AV_COLLECT_TASK_ATTACHMENTS,
+                 AV_COLLECT_STORIES -> context.getProperty(PROP_ASANA_SECTION).getValue();
+            case AV_COLLECT_PROJECTS, AV_COLLECT_TAGS, AV_COLLECT_USERS, AV_COLLECT_PROJECT_MEMBERS, AV_COLLECT_TEAMS,
+                 AV_COLLECT_TEAM_MEMBERS, AV_COLLECT_PROJECT_STATUS_UPDATES, AV_COLLECT_PROJECT_STATUS_ATTACHMENTS,
+                 AV_COLLECT_PROJECT_EVENTS -> null;
+        };
+    }
+
+    protected String getTagName(ProcessContext context, AsanaObjectType objectType) {
+        return switch (objectType) {
+            case AV_COLLECT_TASKS,
+                 AV_COLLECT_TASK_ATTACHMENTS,
+                 AV_COLLECT_STORIES -> context.getProperty(PROP_ASANA_TAG).getValue();
+            case AV_COLLECT_PROJECTS, AV_COLLECT_TAGS, AV_COLLECT_USERS, AV_COLLECT_PROJECT_MEMBERS, AV_COLLECT_TEAMS,
+                 AV_COLLECT_TEAM_MEMBERS, AV_COLLECT_PROJECT_STATUS_UPDATES, AV_COLLECT_PROJECT_STATUS_ATTACHMENTS,
+                 AV_COLLECT_PROJECT_EVENTS -> null;
+        };
+    }
+
+    protected String getTeamName(ProcessContext context, AsanaObjectType objectType) {
+        return switch (objectType) {
+            case AV_COLLECT_TEAM_MEMBERS -> context.getProperty(PROP_ASANA_TEAM_NAME).getValue();
+            case AV_COLLECT_TASKS, AV_COLLECT_TASK_ATTACHMENTS, AV_COLLECT_PROJECTS, AV_COLLECT_TAGS, AV_COLLECT_USERS,
+                 AV_COLLECT_PROJECT_MEMBERS, AV_COLLECT_TEAMS, AV_COLLECT_STORIES, AV_COLLECT_PROJECT_STATUS_UPDATES,
+                 AV_COLLECT_PROJECT_STATUS_ATTACHMENTS, AV_COLLECT_PROJECT_EVENTS -> null;
+        };
+    }
+
     private static DistributedMapCacheClient getDistributedMapCacheClient(ProcessContext context) {
-        return context.getProperty(DISTRIBUTED_CACHE_SERVICE).asControllerService(DistributedMapCacheClient.class);
+        return context.getProperty(PROP_DISTRIBUTED_CACHE_SERVICE).asControllerService(DistributedMapCacheClient.class);
     }
 }

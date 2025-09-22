@@ -27,6 +27,7 @@ import static org.apache.nifi.minifi.commons.api.MiNiFiProperties.ValidatorNames
 
 import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -84,6 +85,7 @@ public enum MiNiFiProperties {
     C2_RUNTIME_MANIFEST_IDENTIFIER("c2.runtime.manifest.identifier", "minifi", false, true, VALID),
     C2_RUNTIME_TYPE("c2.runtime.type", "minifi-java", false, true, VALID),
     C2_ASSET_DIRECTORY("c2.asset.directory", "./asset", false, true, VALID),
+    C2_ASSET_REPOSITORY_DIRECTORY("c2.asset.repository.directory", "./asset/repository", false, false, VALID),
     C2_SECURITY_TRUSTSTORE_LOCATION("c2.security.truststore.location", "", false, false, VALID),
     C2_SECURITY_TRUSTSTORE_PASSWORD("c2.security.truststore.password", "", true, false, VALID),
     C2_SECURITY_TRUSTSTORE_TYPE("c2.security.truststore.type", "JKS", false, false, VALID),
@@ -138,7 +140,7 @@ public enum MiNiFiProperties {
         this.validator = validator;
     }
 
-    public static LinkedHashMap<String, MiNiFiProperties> sortedPropertiesByKey() {
+    public static Map<String, MiNiFiProperties> sortedPropertiesByKey() {
         return Arrays.stream(values())
             .sorted()
             .collect(Collectors.toMap(MiNiFiProperties::getKey, Function.identity(), (x, y) -> y, LinkedHashMap::new));

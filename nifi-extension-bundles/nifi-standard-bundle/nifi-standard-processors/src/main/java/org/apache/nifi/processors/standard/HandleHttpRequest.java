@@ -26,6 +26,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.Part;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.apache.nifi.annotation.behavior.InputRequirement;
 import org.apache.nifi.annotation.behavior.InputRequirement.Requirement;
 import org.apache.nifi.annotation.behavior.WritesAttribute;
@@ -259,7 +260,6 @@ public class HandleHttpRequest extends AbstractProcessor {
             .build();
     public static final PropertyDescriptor MAXIMUM_THREADS = new PropertyDescriptor.Builder()
             .name("Maximum Threads")
-            .displayName("Maximum Threads")
             .description("The maximum number of threads that the embedded HTTP server will use for handling requests.")
             .required(true)
             .defaultValue("200")
@@ -400,7 +400,9 @@ public class HandleHttpRequest extends AbstractProcessor {
         serverConnectorFactory.setWantClientAuth(wantClientAuth);
         final SSLContext sslContext = sslContextProvider == null ? null : sslContextProvider.createContext();
         serverConnectorFactory.setSslContext(sslContext);
-        final HttpProtocolStrategy httpProtocolStrategy = context.getProperty(HTTP_PROTOCOL_STRATEGY).asAllowableValue(HttpProtocolStrategy.class);
+        final HttpProtocolStrategy httpProtocolStrategy = sslContext == null
+                ? HttpProtocolStrategy.valueOf(HTTP_PROTOCOL_STRATEGY.getDefaultValue())
+                : context.getProperty(HTTP_PROTOCOL_STRATEGY).asAllowableValue(HttpProtocolStrategy.class);
         serverConnectorFactory.setApplicationLayerProtocols(httpProtocolStrategy.getApplicationLayerProtocols());
 
         final ServerConnector serverConnector = serverConnectorFactory.getServerConnector();
@@ -610,7 +612,7 @@ public class HandleHttpRequest extends AbstractProcessor {
         final long start = System.nanoTime();
         final HttpServletRequest request = container.getRequest();
 
-        if (StringUtils.contains(request.getContentType(), MIME_TYPE__MULTIPART_FORM_DATA)) {
+        if (Strings.CS.contains(request.getContentType(), MIME_TYPE__MULTIPART_FORM_DATA)) {
           final long requestMaxSize = context.getProperty(MULTIPART_REQUEST_MAX_SIZE).asDataSize(DataUnit.B).longValue();
           final int readBufferSize = context.getProperty(MULTIPART_READ_BUFFER_SIZE).asDataSize(DataUnit.B).intValue();
           String tempDir = System.getProperty("java.io.tmpdir");

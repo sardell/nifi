@@ -17,6 +17,8 @@
 package org.apache.nifi.processors.pgp;
 
 import org.apache.nifi.annotation.behavior.InputRequirement;
+import org.apache.nifi.annotation.behavior.SideEffectFree;
+import org.apache.nifi.annotation.behavior.SupportsBatching;
 import org.apache.nifi.annotation.behavior.WritesAttribute;
 import org.apache.nifi.annotation.behavior.WritesAttributes;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
@@ -75,6 +77,8 @@ import java.util.Set;
 /**
  * Encrypt Content using Open Pretty Good Privacy encryption methods
  */
+@SideEffectFree
+@SupportsBatching
 @InputRequirement(InputRequirement.Requirement.INPUT_REQUIRED)
 @Tags({"PGP", "GPG", "OpenPGP", "Encryption", "RFC 4880"})
 @CapabilityDescription("Encrypt contents using OpenPGP. The processor reads input and detects OpenPGP messages to avoid unnecessary additional wrapping in Literal Data packets.")
@@ -282,11 +286,11 @@ public class EncryptContentPGP extends AbstractProcessor {
             generators.add(new JcePBEKeyEncryptionMethodGenerator(passphrase).setSecureRandom(secureRandom));
         }
 
-        final String publicKeySearch = context.getProperty(PUBLIC_KEY_SEARCH).evaluateAttributeExpressions(flowFile).getValue();
+        final PGPPublicKeyService publicKeyService = context.getProperty(PUBLIC_KEY_SERVICE).asControllerService(PGPPublicKeyService.class);
+        final String publicKeySearch = publicKeyService == null ? null : context.getProperty(PUBLIC_KEY_SEARCH).evaluateAttributeExpressions(flowFile).getValue();
         if (StringUtils.isNotBlank(publicKeySearch)) {
             getLogger().debug("Public Key Search [{}]", publicKeySearch);
 
-            final PGPPublicKeyService publicKeyService = context.getProperty(PUBLIC_KEY_SERVICE).asControllerService(PGPPublicKeyService.class);
             final Optional<PGPPublicKey> optionalPublicKey = publicKeyService.findPublicKey(publicKeySearch);
             if (optionalPublicKey.isPresent()) {
                 final PGPPublicKey publicKey = optionalPublicKey.get();

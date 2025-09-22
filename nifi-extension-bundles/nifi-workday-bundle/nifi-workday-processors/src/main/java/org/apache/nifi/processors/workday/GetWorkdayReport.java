@@ -17,26 +17,6 @@
 
 package org.apache.nifi.processors.workday;
 
-import static org.apache.nifi.expression.ExpressionLanguageScope.FLOWFILE_ATTRIBUTES;
-import static org.apache.nifi.processor.util.StandardValidators.URL_VALIDATOR;
-
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Pattern;
 import org.apache.nifi.annotation.behavior.InputRequirement;
 import org.apache.nifi.annotation.behavior.InputRequirement.Requirement;
 import org.apache.nifi.annotation.behavior.SideEffectFree;
@@ -69,6 +49,27 @@ import org.apache.nifi.web.client.api.HttpResponseEntity;
 import org.apache.nifi.web.client.api.WebClientService;
 import org.apache.nifi.web.client.provider.api.WebClientServiceProvider;
 
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
+
+import static org.apache.nifi.expression.ExpressionLanguageScope.FLOWFILE_ATTRIBUTES;
+import static org.apache.nifi.processor.util.StandardValidators.URL_VALIDATOR;
+
 @Tags({"Workday", "report"})
 @InputRequirement(Requirement.INPUT_ALLOWED)
 @CapabilityDescription("A processor which can interact with a configurable Workday Report. The processor can forward the content without modification, or you can transform it by"
@@ -99,7 +100,6 @@ public class GetWorkdayReport extends AbstractProcessor {
 
     protected static final PropertyDescriptor REPORT_URL = new PropertyDescriptor.Builder()
         .name("Workday Report URL")
-        .displayName("Workday Report URL")
         .description("HTTP remote URL of Workday report including a scheme of http or https, as well as a hostname or IP address with optional port and path elements.")
         .required(true)
         .expressionLanguageSupported(FLOWFILE_ATTRIBUTES)
@@ -123,12 +123,11 @@ public class GetWorkdayReport extends AbstractProcessor {
         .description("The type of authorization for retrieving data from Workday resources.")
         .required(true)
         .allowableValues(BASIC_AUTH_TYPE, OAUTH_TYPE)
-        .defaultValue(BASIC_AUTH_TYPE.getValue())
+        .defaultValue(BASIC_AUTH_TYPE)
         .build();
 
     protected static final PropertyDescriptor WORKDAY_USERNAME = new PropertyDescriptor.Builder()
         .name("Workday Username")
-        .displayName("Workday Username")
         .description("The username provided for authentication of Workday requests. Encoded using Base64 for HTTP Basic Authentication as described in RFC 7617.")
         .dependsOn(AUTH_TYPE, BASIC_AUTH_TYPE)
         .required(true)
@@ -138,7 +137,6 @@ public class GetWorkdayReport extends AbstractProcessor {
 
     protected static final PropertyDescriptor WORKDAY_PASSWORD = new PropertyDescriptor.Builder()
         .name("Workday Password")
-        .displayName("Workday Password")
         .description("The password provided for authentication of Workday requests. Encoded using Base64 for HTTP Basic Authentication as described in RFC 7617.")
         .dependsOn(AUTH_TYPE, BASIC_AUTH_TYPE)
         .required(true)
@@ -229,10 +227,12 @@ public class GetWorkdayReport extends AbstractProcessor {
 
     @OnScheduled
     public void setUpClient(final ProcessContext context)  {
-        OAuth2AccessTokenProvider tokenProvider = context.getProperty(OAUTH2_ACCESS_TOKEN_PROVIDER).asControllerService(OAuth2AccessTokenProvider.class);
+        String authType = context.getProperty(AUTH_TYPE).getValue();
+        OAuth2AccessTokenProvider tokenProvider = authType.equals(OAUTH_TYPE.getValue())
+                ? context.getProperty(OAUTH2_ACCESS_TOKEN_PROVIDER).asControllerService(OAuth2AccessTokenProvider.class) : null;
         WebClientServiceProvider standardWebClientServiceProvider = context.getProperty(WEB_CLIENT_SERVICE).asControllerService(WebClientServiceProvider.class);
         RecordReaderFactory recordReaderFactory = context.getProperty(RECORD_READER_FACTORY).asControllerService(RecordReaderFactory.class);
-        RecordSetWriterFactory recordSetWriterFactory = context.getProperty(RECORD_WRITER_FACTORY).asControllerService(RecordSetWriterFactory.class);
+        RecordSetWriterFactory recordSetWriterFactory = recordReaderFactory == null ? null : context.getProperty(RECORD_WRITER_FACTORY).asControllerService(RecordSetWriterFactory.class);
         WebClientService webClientService = standardWebClientServiceProvider.getWebClientService();
         tokenProviderReference.set(tokenProvider);
         webClientReference.set(webClientService);
@@ -337,7 +337,7 @@ public class GetWorkdayReport extends AbstractProcessor {
     }
 
     private String createAuthorizationHeader(ProcessContext context, FlowFile flowfile) {
-        String authType = context.getProperty(AUTH_TYPE).getValue();
+        final String authType = context.getProperty(AUTH_TYPE).getValue();
         if (BASIC_AUTH_TYPE.getValue().equals(authType)) {
             String userName = context.getProperty(WORKDAY_USERNAME).evaluateAttributeExpressions(flowfile).getValue();
             String password = context.getProperty(WORKDAY_PASSWORD).evaluateAttributeExpressions(flowfile).getValue();

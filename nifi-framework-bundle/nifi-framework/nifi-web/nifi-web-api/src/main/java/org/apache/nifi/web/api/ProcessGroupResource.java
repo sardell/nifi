@@ -157,8 +157,6 @@ public class ProcessGroupResource extends FlowUpdateResource<ProcessGroupImportE
 
     private static final Logger logger = LoggerFactory.getLogger(ProcessGroupResource.class);
 
-    private static final String FLOW_ANALYSIS_REQUEST_TYPE = "flow-analysis-requests";
-
     private ProcessorResource processorResource;
     private InputPortResource inputPortResource;
     private OutputPortResource outputPortResource;
@@ -176,8 +174,7 @@ public class ProcessGroupResource extends FlowUpdateResource<ProcessGroupImportE
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     static {
-        MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        MAPPER.setDefaultPropertyInclusion(JsonInclude.Value.construct(JsonInclude.Include.NON_NULL, JsonInclude.Include.NON_NULL));
+        MAPPER.setDefaultPropertyInclusion(JsonInclude.Include.NON_NULL);
         MAPPER.setAnnotationIntrospector(new JakartaXmlBindAnnotationIntrospector(MAPPER.getTypeFactory()));
         MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
@@ -516,6 +513,34 @@ public class ProcessGroupResource extends FlowUpdateResource<ProcessGroupImportE
             updateStrategy = ProcessGroupRecursivity.valueOf(processGroupUpdateStrategy);
         }
 
+        final VersionControlInformationDTO versionControlInfo = requestProcessGroupDTO.getVersionControlInformation();
+        if (versionControlInfo != null) {
+            if (updateStrategy == ProcessGroupRecursivity.ALL_DESCENDANTS) {
+                throw new IllegalArgumentException("Version Control Information cannot be specified when applying updates recursively");
+            }
+
+            if (StringUtils.isBlank(versionControlInfo.getRegistryId())
+                || StringUtils.isBlank(versionControlInfo.getBucketId())
+                || StringUtils.isBlank(versionControlInfo.getFlowId())
+                || StringUtils.isBlank(versionControlInfo.getVersion())) {
+                throw new IllegalArgumentException("Version Control Information must contain a registry id, bucket id, flow id, and version");
+            }
+
+            final FlowSnapshotContainer flowSnapshotContainer = getFlowFromRegistry(versionControlInfo);
+            final RegisteredFlowSnapshot flowSnapshot = flowSnapshotContainer.getFlowSnapshot();
+            if (flowSnapshot.getFlowContents() != null) {
+                final VersionedFlowCoordinates versionedFlowCoordinates = flowSnapshot.getFlowContents().getVersionedFlowCoordinates();
+                if (versionedFlowCoordinates != null) {
+                    versionControlInfo.setStorageLocation(versionedFlowCoordinates.getStorageLocation());
+                }
+            }
+            if (flowSnapshot.getSnapshotMetadata() != null && flowSnapshot.getSnapshotMetadata().getBranch() != null && versionControlInfo.getBranch() == null) {
+                versionControlInfo.setBranch(flowSnapshot.getSnapshotMetadata().getBranch());
+            }
+            versionControlInfo.setGroupId(requestProcessGroupDTO.getId());
+            requestProcessGroupEntity.setVersionedFlowSnapshot(flowSnapshot);
+        }
+
         final String executionEngine = requestProcessGroupDTO.getExecutionEngine();
         if (executionEngine != null) {
             try {
@@ -630,7 +655,15 @@ public class ProcessGroupResource extends FlowUpdateResource<ProcessGroupImportE
                         final ProcessGroupEntity entity = serviceFacade.updateProcessGroup(revision, groupDTO);
 
                         if (requestGroupId.equals(entity.getId())) {
-                            responseEntity = entity;
+                            final VersionControlInformationDTO vciDto = entry.getKey().getComponent().getVersionControlInformation();
+                            final RegisteredFlowSnapshot flowSnapshot = entry.getKey().getVersionedFlowSnapshot();
+                            if (vciDto != null && flowSnapshot != null) {
+                                final Revision updatedRevision = getRevision(entity.getRevision(), entity.getId());
+                                responseEntity = serviceFacade.setVersionControlInformation(updatedRevision, groupDTO, flowSnapshot);
+                            } else {
+                                responseEntity = entity;
+                            }
+
                             populateRemainingProcessGroupEntityContent(responseEntity);
 
                             // prune response as necessary

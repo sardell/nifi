@@ -30,12 +30,16 @@ import org.apache.nifi.components.resource.ResourceType;
 import org.apache.nifi.controller.ConfigurationContext;
 import org.apache.nifi.expression.ExpressionLanguageScope;
 import org.apache.nifi.jetty.configuration.connector.StandardServerConnectorFactory;
+import org.apache.nifi.migration.PropertyConfiguration;
 import org.apache.nifi.processor.DataUnit;
 import org.apache.nifi.processor.util.StandardValidators;
 import org.apache.nifi.ssl.SSLContextProvider;
 import org.apache.nifi.websocket.WebSocketConfigurationException;
 import org.apache.nifi.websocket.WebSocketMessageRouter;
 import org.apache.nifi.websocket.WebSocketServerService;
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
 import org.eclipse.jetty.ee10.servlet.security.ConstraintMapping;
 import org.eclipse.jetty.ee10.servlet.security.ConstraintSecurityHandler;
 import org.eclipse.jetty.ee10.websocket.server.JettyServerUpgradeRequest;
@@ -44,6 +48,7 @@ import org.eclipse.jetty.ee10.websocket.server.JettyWebSocketCreator;
 import org.eclipse.jetty.ee10.websocket.server.JettyWebSocketServlet;
 import org.eclipse.jetty.ee10.websocket.server.JettyWebSocketServletFactory;
 import org.eclipse.jetty.ee10.websocket.server.config.JettyWebSocketServletContainerInitializer;
+import org.eclipse.jetty.security.Constraint;
 import org.eclipse.jetty.security.DefaultAuthenticatorFactory;
 import org.eclipse.jetty.security.HashLoginService;
 import org.eclipse.jetty.security.LoginService;
@@ -51,24 +56,23 @@ import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
-import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
-import org.eclipse.jetty.ee10.servlet.ServletHandler;
-import org.eclipse.jetty.ee10.servlet.ServletHolder;
-import org.eclipse.jetty.security.Constraint;
 import org.eclipse.jetty.util.resource.PathResourceFactory;
 import org.eclipse.jetty.util.resource.Resource;
 
 import javax.net.ssl.SSLContext;
+
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 @Tags({"WebSocket", "Jetty", "server"})
@@ -95,8 +99,7 @@ public class JettyWebSocketServer extends AbstractJettyWebSocketService implemen
             "See http://www.eclipse.org/jetty/javadoc/current/org/eclipse/jetty/security/HashLoginService.html for detail.");
 
     public static final PropertyDescriptor CLIENT_AUTH = new PropertyDescriptor.Builder()
-            .name("client-authentication")
-            .displayName("SSL Client Authentication")
+            .name("Client Authentication")
             .description("Specifies whether or not the Processor should authenticate client by its certificate. "
                     + "This value is ignored if the <SSL Context Service> "
                     + "Property is not specified or the SSL Context provided uses only a KeyStore and not a TrustStore.")
@@ -105,9 +108,8 @@ public class JettyWebSocketServer extends AbstractJettyWebSocketService implemen
             .defaultValue(CLIENT_NONE.getValue())
             .build();
 
-    public static final PropertyDescriptor LISTEN_PORT = new PropertyDescriptor.Builder()
-            .name("listen-port")
-            .displayName("Listen Port")
+    public static final PropertyDescriptor PORT = new PropertyDescriptor.Builder()
+            .name("Port")
             .description("The port number on which this WebSocketServer listens to.")
             .required(true)
             .expressionLanguageSupported(ExpressionLanguageScope.ENVIRONMENT)
@@ -115,8 +117,7 @@ public class JettyWebSocketServer extends AbstractJettyWebSocketService implemen
             .build();
 
     public static final PropertyDescriptor BASIC_AUTH = new PropertyDescriptor.Builder()
-            .name("basic-auth")
-            .displayName("Enable Basic Authentication")
+            .name("Basic Authentication Enabled")
             .description("If enabled, client connection requests are authenticated with "
                     + "Basic authentication using the specified Login Provider.")
             .required(true)
@@ -125,8 +126,7 @@ public class JettyWebSocketServer extends AbstractJettyWebSocketService implemen
             .build();
 
     public static final PropertyDescriptor AUTH_PATH_SPEC = new PropertyDescriptor.Builder()
-            .name("auth-path-spec")
-            .displayName("Basic Authentication Path Spec")
+            .name("Basic Authentication Path Spec")
             .description("Specify a Path Spec to apply Basic Authentication.")
             .required(false)
             .defaultValue("/*")
@@ -135,8 +135,7 @@ public class JettyWebSocketServer extends AbstractJettyWebSocketService implemen
             .build();
 
     public static final PropertyDescriptor AUTH_ROLES = new PropertyDescriptor.Builder()
-            .name("auth-roles")
-            .displayName("Basic Authentication Roles")
+            .name("Basic Authentication Roles")
             .description("The authenticated user must have one of specified role. "
                     + "Multiple roles can be set as comma separated string. "
                     + "'*' represents any role and so does '**' any role including no role.")
@@ -147,8 +146,7 @@ public class JettyWebSocketServer extends AbstractJettyWebSocketService implemen
             .build();
 
     public static final PropertyDescriptor LOGIN_SERVICE = new PropertyDescriptor.Builder()
-            .name("login-service")
-            .displayName("Login Service")
+            .name("Login Service")
             .description("Specify which Login Service to use for Basic Authentication.")
             .required(false)
             .allowableValues(LOGIN_SERVICE_HASH)
@@ -169,8 +167,8 @@ public class JettyWebSocketServer extends AbstractJettyWebSocketService implemen
     private static final List<PropertyDescriptor> PROPERTY_DESCRIPTORS = Stream.concat(
             getAbstractPropertyDescriptors().stream(),
             Stream.of(
-                LISTEN_PORT,
-                SSL_CONTEXT,
+                PORT,
+                SSL_CONTEXT_SERVICE,
                 CLIENT_AUTH,
                 BASIC_AUTH,
                 AUTH_PATH_SPEC,
@@ -182,6 +180,19 @@ public class JettyWebSocketServer extends AbstractJettyWebSocketService implemen
 
     private Server server;
     private Integer listenPort;
+
+    @Override
+    public void migrateProperties(final PropertyConfiguration propertyConfiguration) {
+        super.migrateProperties(propertyConfiguration);
+        propertyConfiguration.renameProperty("listening-port", PORT.getName());
+        propertyConfiguration.renameProperty("ssl-context-service", SSL_CONTEXT_SERVICE.getName());
+        propertyConfiguration.renameProperty("client-authentication", CLIENT_AUTH.getName());
+        propertyConfiguration.renameProperty("basic-auth", BASIC_AUTH.getName());
+        propertyConfiguration.renameProperty("auth-path-spec", AUTH_PATH_SPEC.getName());
+        propertyConfiguration.renameProperty("auth-roles", AUTH_ROLES.getName());
+        propertyConfiguration.renameProperty("login-service", LOGIN_SERVICE.getName());
+        propertyConfiguration.renameProperty("users-properties-file", USERS_PROPERTIES_FILE.getName());
+    }
 
     @Override
     protected List<PropertyDescriptor> getSupportedPropertyDescriptors() {
@@ -218,16 +229,20 @@ public class JettyWebSocketServer extends AbstractJettyWebSocketService implemen
             final int inputBufferSize = context.getProperty(INPUT_BUFFER_SIZE).asDataSize(DataUnit.B).intValue();
             final int maxTextMessageSize = context.getProperty(MAX_TEXT_MESSAGE_SIZE).asDataSize(DataUnit.B).intValue();
             final int maxBinaryMessageSize = context.getProperty(MAX_BINARY_MESSAGE_SIZE).asDataSize(DataUnit.B).intValue();
+            final long idleTimeoutMillis = context.getProperty(IDLE_TIMEOUT).asTimePeriod(TimeUnit.MILLISECONDS);
             webSocketServletFactory.setInputBufferSize(inputBufferSize);
             webSocketServletFactory.setMaxTextMessageSize(maxTextMessageSize);
             webSocketServletFactory.setMaxBinaryMessageSize(maxBinaryMessageSize);
+            webSocketServletFactory.setIdleTimeout(Duration.ofMillis(idleTimeoutMillis));
             webSocketServletFactory.setCreator(this);
         }
 
         @Override
         public Object createWebSocket(JettyServerUpgradeRequest servletUpgradeRequest, JettyServerUpgradeResponse servletUpgradeResponse) {
             final URI requestURI = servletUpgradeRequest.getRequestURI();
-            final int port = ((InetSocketAddress) servletUpgradeRequest.getLocalSocketAddress()).getPort();
+
+
+            final int port = getPort(servletUpgradeRequest);
             final JettyWebSocketServer service = portToControllerService.get(port);
 
             if (service == null) {
@@ -244,6 +259,16 @@ public class JettyWebSocketServer extends AbstractJettyWebSocketService implemen
 
             return new RoutingWebSocketListener(router);
         }
+    }
+
+    private static int getPort(JettyServerUpgradeRequest servletUpgradeRequest) {
+        Object localSocketAddress = servletUpgradeRequest.getLocalSocketAddress();
+        if (localSocketAddress instanceof InetSocketAddress inetSocketAddress) {
+            return inetSocketAddress.getPort();
+        }
+        throw new IllegalStateException(
+                "Expected InetSocketAddress but got: %s".formatted(
+                        localSocketAddress == null ? "null" : localSocketAddress.getClass().getName()));
     }
 
     @OnEnabled
@@ -305,7 +330,7 @@ public class JettyWebSocketServer extends AbstractJettyWebSocketService implemen
 
         server.setHandler(handlerCollection);
 
-        listenPort = context.getProperty(LISTEN_PORT).evaluateAttributeExpressions().asInteger();
+        listenPort = context.getProperty(PORT).evaluateAttributeExpressions().asInteger();
         final ServerConnector serverConnector = getServerConnector(context);
         server.setConnectors(new Connector[] {serverConnector});
 
@@ -327,7 +352,7 @@ public class JettyWebSocketServer extends AbstractJettyWebSocketService implemen
         final StandardServerConnectorFactory serverConnectorFactory = new StandardServerConnectorFactory(server, listenPort);
         final ServerConnector serverConnector;
 
-        final SSLContextProvider sslContextProvider = context.getProperty(SSL_CONTEXT).asControllerService(SSLContextProvider.class);
+        final SSLContextProvider sslContextProvider = context.getProperty(SSL_CONTEXT_SERVICE).asControllerService(SSLContextProvider.class);
         if (sslContextProvider == null) {
             serverConnector = serverConnectorFactory.getServerConnector();
         } else {
